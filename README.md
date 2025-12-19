@@ -17,6 +17,15 @@
 4. **响应式设计**：适配不同屏幕尺寸
 5. **现代化UI**：采用了水滴形状的设计风格
 
+## 主要依赖
+```bash
+yarn add vue-router@4 --save
+yarn add element-plus@2.2.19 --save
+yarn add axios@1.2.1 --save
+yarn add mockjs@1.1.0 --save
+yarn add @element-plus/icons-vue
+```
+
 ## 运行方式
 
 ### 安装依赖
@@ -28,7 +37,6 @@ npm install
 ```bash
 npm run dev
 ```
-
 ### 构建生产版本
 ```bash
 npm run build
