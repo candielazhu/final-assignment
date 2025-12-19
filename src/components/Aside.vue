@@ -2,14 +2,14 @@
     <div class="aside">
         <el-row class="tac">
             <el-col width="100%">
-                <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose">
-                    <el-menu-item index="2">
+                <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose" @select="handleSelect">
+                    <el-menu-item index="2" :route="{ name: 'Main' }">
                         <el-icon>
                             <CoffeeCup />
                         </el-icon>
                         <span>话题</span>
                     </el-menu-item>
-                    <el-menu-item index="4">
+                    <el-menu-item index="4" :route="{ name: 'Write' }">
                         <el-icon>
                             <Edit />
                         </el-icon>
@@ -42,10 +42,11 @@
 
 
 <script setup>
-import {
+import { 
     Location,
     Setting,
-    CoffeeCup
+    CoffeeCup,
+    Edit
 } from '@element-plus/icons-vue'
 
 const handleOpen = (key, keyPath) => {
@@ -53,6 +54,10 @@ const handleOpen = (key, keyPath) => {
 }
 const handleClose = (key, keyPath) => {
     console.log(key, keyPath)
+}
+
+const handleSelect = (key, keyPath) => {
+    console.log('选中菜单:', key, keyPath)
 }
 </script>
 

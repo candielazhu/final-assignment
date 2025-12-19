@@ -12,7 +12,7 @@ const routes = [
   {
     path: '/',
     name: 'Index',
-    component: () => import('./components/index.vue'),
+    component: () => import('./components/Index.vue'),
     meta: { requiresAuth: true }, // 需要登录才能访问
     children: [
       {
@@ -29,6 +29,11 @@ const routes = [
         path: 'topic/:item',
         name: 'TopicWithItem',
         component: () => import('./components/Topic.vue')
+      },
+      {
+        path: 'write',
+        name: 'Write',
+        component: () => import('./components/Write.vue')
       }
     ]
   },
@@ -40,7 +45,7 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('./components/register.vue')
+    component: () => import('./components/Register.vue')
   },
   // 404页面路由
   {
