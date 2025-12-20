@@ -1,0 +1,88 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS lscvue CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 使用数据库
+USE lscvue;
+
+-- 创建users表
+CREATE TABLE IF NOT EXISTS users(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    PASSWORD VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    avatar VARCHAR(255) DEFAULT '',
+    role ENUM('admin', 'user') DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 创建categories表
+CREATE TABLE IF NOT EXISTS categories (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 创建articles表
+CREATE TABLE IF NOT EXISTS articles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    category_id INT,
+    title VARCHAR(200) NOT NULL,
+    summary TEXT NOT NULL,
+    content LONGTEXT NOT NULL,
+    html_content LONGTEXT NOT NULL,
+    status ENUM('draft', 'published') DEFAULT 'draft',
+    view_count INT DEFAULT 0,
+    like_count INT DEFAULT 0,
+    comment_count INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- 创建comments表
+CREATE TABLE IF NOT EXISTS comments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    article_id INT NOT NULL,
+    user_id INT NOT NULL,
+    parent_id INT,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+);
+
+-- 创建tags表
+CREATE TABLE IF NOT EXISTS tags (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(30) UNIQUE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 创建article_tags表
+CREATE TABLE IF NOT EXISTS article_tags (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    article_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+    UNIQUE KEY article_tag (article_id, tag_id)
+);
+
+-- 插入初始数据
+-- 插入管理员用户
+INSERT INTO users (username, password, email, role) VALUES ('admin', '$2a$10$J94eS4U0t0W0e1K2R3E4T5Y6U7I8O9P0Q', 'admin@example.com', 'admin') ON DUPLICATE KEY UPDATE username=username;
+
+-- 插入默认分类
+INSERT INTO categories (name, description) VALUES ('技术', '技术相关文章'), ('生活', '生活相关文章'), ('读书', '读书笔记') ON DUPLICATE KEY UPDATE name=name;
+
+-- 插入默认标签
+INSERT INTO tags (name) VALUES ('vue'), ('python'), ('java'), ('mysql'), ('web开发'), ('数据分析'), ('机器学习') ON DUPLICATE KEY UPDATE name=name;
