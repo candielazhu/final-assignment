@@ -4,18 +4,33 @@
             <div class="header">
                 &nbsp;
                 <h2>{{ article.title || '文章详情' }}</h2>
-                <el-button type="primary" @click="goBack">返回</el-button>
+                <div class="btn-container">
+                    <!-- 只有文章作者才能看到编辑和删除按钮 -->
+                    <el-button type="primary" @click="handleEditClick" v-if="isAuthor">编辑</el-button>
+                    <el-popconfirm
+                      v-if="isAuthor"
+                      title="确定要删除这篇文章吗？"
+                      confirm-button-text="确定"
+                      cancel-button-text="取消"
+                      @confirm="handleDeleteClick"
+                    >
+                      <template #reference>
+                        <el-button type="danger">删除</el-button>
+                      </template>
+                    </el-popconfirm>
+                    <el-button type="primary" @click="goBack">返回</el-button>
+                </div>
             </div>
-            
+
             <!-- 加载中状态 -->
             <div v-if="loading" class="loading-state">
                 <el-skeleton :rows="5" animated />
             </div>
-            
+
             <!-- 文章内容 -->
             <div v-else-if="article.id" class="content-wrapper">
                 <div class="markdown-content" ref="markdownRef" v-html="htmlContent">
-                    
+
                 </div>
                 <!-- 锚点容器 -->
                 <div class="anchor-container" v-if="anchors.length > 0">
@@ -29,12 +44,12 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 文章不存在状态 -->
             <div v-else class="empty-state">
                 文章不存在
             </div>
-            
+
             <!-- 评论组件 -->
             <Comment v-if="article.id" :article-id="article.id" @update:comment-count="updateCommentCount" />
         </el-scrollbar>
@@ -45,7 +60,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElButton, ElSkeleton } from 'element-plus'
+import { ElButton, ElSkeleton, ElPopconfirm, ElMessage } from 'element-plus'
 import { marked } from 'marked'
 import Comment from './Comment.vue'
 import request from '../axios/request'
@@ -60,6 +75,7 @@ const article = ref({
     title: '',
     content: '',
     author: '',
+    author_id: null, // 文章作者ID
     createTime: '',
     commentCount: 0
 })
@@ -70,6 +86,47 @@ const loading = ref(false)
 // 锚点相关数据
 const anchors = ref([])
 const activeAnchor = ref('')
+
+// 判断当前用户是否是文章作者
+const isAuthor = computed(() => {
+    // 获取当前登录用户信息
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    const currentUserId = userInfo.id
+    
+    // 检查当前用户ID是否与文章作者ID匹配
+    return currentUserId && article.value.author_id && currentUserId == article.value.author_id
+})
+
+// 编辑文章
+const handleEditClick = () => {
+    // 跳转到编辑页面，传递文章ID
+    router.push({
+        name: 'Write',
+        query: { id: article.value.id }
+    })
+}
+
+// 删除文章
+const handleDeleteClick = async () => {
+    try {
+        const response = await request({
+            url: `/articles/${article.value.id}`,
+            method: 'delete'
+        })
+        
+        if (response.data.code === 200) {
+            // 使用ElMessage替代alert，提供更好的用户体验
+            ElMessage.success('文章删除成功')
+            // 跳转到首页
+            router.push('/')
+        } else {
+            ElMessage.error('文章删除失败：' + response.data.message)
+        }
+    } catch (error) {
+        console.error('删除文章失败:', error)
+        ElMessage.error('文章删除失败，请稍后重试')
+    }
+}
 
 // 生成唯一ID
 const generateId = (text) => {
@@ -155,7 +212,7 @@ const handleScroll = () => {
 const fetchArticleDetail = async () => {
     const id = parseInt(route.params.id)
     if (!id) return
-    
+
     loading.value = true
     try {
         // 使用mock接口获取文章详情
@@ -163,7 +220,7 @@ const fetchArticleDetail = async () => {
             url: `/articles/${id}`,
             method: 'get'
         })
-        
+
         if (response.data.code === 200) {
             article.value = response.data.data
         } else {
@@ -205,7 +262,7 @@ watch(() => route.params.id, (newId) => {
 onMounted(() => {
     // 获取文章详情
     fetchArticleDetail()
-    
+
     window.addEventListener('scroll', handleScroll)
 })
 
@@ -217,10 +274,17 @@ onUnmounted(() => {
 
 <style scoped>
 .topic-container {
-    padding: 20px;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     min-height: 80vh;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+    margin: 0;
+}
+
+.topic-container .el-scrollbar__view {
+    padding: 20px;
 }
 
 .header {
@@ -230,6 +294,8 @@ onUnmounted(() => {
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 1000px; /* 限制最大宽度 */
 }
 
 /* 内容和锚点的布局 */
@@ -237,6 +303,10 @@ onUnmounted(() => {
     display: flex;
     gap: 20px;
     align-items: flex-start;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 1000px; /* 限制最大宽度，保持良好的阅读体验 */
+    margin: 0;
 }
 
 .markdown-content {
@@ -248,6 +318,7 @@ onUnmounted(() => {
     overflow-y: auto;
     max-height: 70vh;
     border: 1px solid var(--border-color);
+    text-align: left;
 }
 
 /* 锚点容器样式 */

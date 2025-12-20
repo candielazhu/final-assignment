@@ -48,13 +48,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../axios/request'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref(null)
+
+// 文章ID，用于区分是新建还是编辑
+const articleId = ref(null)
 
 // 表单数据
 const form = reactive({
@@ -106,6 +110,31 @@ const fetchCategories = async () => {
     }
 }
 
+// 加载文章数据（用于编辑）
+const loadArticleData = async (id) => {
+    try {
+        const response = await request({
+            url: `/articles/${id}`,
+            method: 'get'
+        })
+        
+        if (response.data.code === 200) {
+            const articleData = response.data.data
+            // 填充表单数据
+            form.title = articleData.title
+            form.summary = articleData.summary
+            form.content = articleData.content
+            form.category_id = articleData.category_id
+            form.status = articleData.status
+        } else {
+            ElMessage.error('加载文章失败')
+        }
+    } catch (error) {
+        console.error('加载文章数据错误:', error)
+        ElMessage.error('加载文章失败，请稍后重试')
+    }
+}
+
 // 保存文章
 const saveArticle = async (status) => {
     // 表单验证
@@ -126,12 +155,22 @@ const saveArticle = async (status) => {
             html_content: ''
         }
         
-        // 调用后端API
-        const response = await request({
-            url: '/articles',
-            method: 'post',
-            data: articleData
-        })
+        let response
+        if (articleId.value) {
+            // 编辑现有文章，使用PUT请求
+            response = await request({
+                url: `/articles/${articleId.value}`,
+                method: 'put',
+                data: articleData
+            })
+        } else {
+            // 创建新文章，使用POST请求
+            response = await request({
+                url: '/articles',
+                method: 'post',
+                data: articleData
+            })
+        }
         
         if (response.data.code === 200) {
             ElMessage.success(status === 'published' ? '文章发布成功' : '草稿保存成功')
@@ -190,9 +229,28 @@ const cancel = () => {
     }
 }
 
-// 组件挂载时获取分类列表
+// 组件挂载时获取分类列表和文章数据
 onMounted(() => {
     fetchCategories()
+    
+    // 检查路由参数中是否包含文章ID，用于编辑
+    const id = route.query.id
+    if (id) {
+        articleId.value = id
+        loadArticleData(id)
+    }
+})
+
+// 监听路由参数变化，用于编辑不同文章
+watch(() => route.query.id, (newId) => {
+    if (newId) {
+        articleId.value = newId
+        loadArticleData(newId)
+    } else {
+        // 没有文章ID，重置表单
+        articleId.value = null
+        resetForm()
+    }
 })
 </script>
 

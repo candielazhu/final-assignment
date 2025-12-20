@@ -159,8 +159,107 @@ async function createArticle(req, res) {
   }
 }
 
+// 更新文章
+async function updateArticle(req, res) {
+  try {
+    const id = req.params.id;
+    const { title, summary, content, category_id, status } = req.body;
+    
+    // 验证输入
+    if (!title || !content || !summary) {
+      return res.status(400).json({
+        code: 400,
+        message: '缺少必填字段',
+        errors: {
+          title: !title ? '标题不能为空' : undefined,
+          summary: !summary ? '摘要不能为空' : undefined,
+          content: !content ? '内容不能为空' : undefined
+        }
+      });
+    }
+    
+    // 将Markdown转换为HTML
+    const html_content = marked(content);
+    
+    // 更新文章到数据库
+    const sql = `
+      UPDATE articles 
+      SET title = ?, summary = ?, content = ?, html_content = ?, category_id = ?, status = ?
+      WHERE id = ?
+    `;
+    
+    const result = await executeQuery(sql, [title, summary, content, html_content, category_id, status, id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '文章不存在'
+      });
+    }
+    
+    // 可选：更新对应的Markdown文件
+    const articlesDir = path.join(__dirname, '../../src/services/articles');
+    const mdFilePath = path.join(articlesDir, `${id}.md`);
+    
+    if (fs.existsSync(mdFilePath)) {
+      fs.writeFileSync(mdFilePath, content, 'utf8');
+    }
+    
+    res.json({
+      code: 200,
+      message: '文章更新成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '更新文章失败',
+      error: error.message
+    });
+  }
+}
+
+// 删除文章
+async function deleteArticle(req, res) {
+  try {
+    const id = req.params.id;
+    
+    // 从数据库中删除文章
+    const sql = `DELETE FROM articles WHERE id = ?`;
+    
+    const result = await executeQuery(sql, [id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '文章不存在'
+      });
+    }
+    
+    // 可选：删除对应的Markdown文件
+    const articlesDir = path.join(__dirname, '../../src/services/articles');
+    const mdFilePath = path.join(articlesDir, `${id}.md`);
+    
+    if (fs.existsSync(mdFilePath)) {
+      fs.unlinkSync(mdFilePath);
+    }
+    
+    res.json({
+      code: 200,
+      message: '文章删除成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: '删除文章失败',
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   getArticles,
   getArticleById,
-  createArticle
+  createArticle,
+  updateArticle,
+  deleteArticle
 };
