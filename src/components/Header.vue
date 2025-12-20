@@ -14,7 +14,10 @@
         <div class="user">
             <el-popover placement="bottom" trigger="hover" width="120">
                 <template #reference>
-                    <el-avatar :icon="UserFilled" :src="userInfo.avatar" style="cursor: pointer;" />
+                    <div class="user-info" style="display: flex; align-items: center; cursor: pointer;">
+                        <span v-if="isLoggedIn && userInfo.username" class="username">{{ userInfo.username }}</span>
+                        <el-avatar :icon="UserFilled" :src="userInfo.avatar" style="margin-right: 8px;" />
+                    </div>
                 </template>
                 <div style="text-align: center; padding: 10px 0;">
                     <el-menu class="el-menu-vertical-demo">
@@ -71,7 +74,7 @@ const checkLoginStatus = () => {
     const cookieLoggedIn = document.cookie.includes('isLoggedIn=true')
     const localStorageLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
     isLoggedIn.value = cookieLoggedIn || localStorageLoggedIn
-    
+
     // 更新全局状态
     if (appState) {
         appState.isLoggedIn.value = isLoggedIn.value
@@ -83,7 +86,7 @@ const toggleTheme = () => {
     const isDark = value1.value
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
-    
+
     // 通知父组件主题变化
     emit('theme-change', isDark)
 }
@@ -117,10 +120,10 @@ const logout = () => {
     localStorage.removeItem('isLoggedIn')
     document.cookie = 'isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
     ElMessage.success('已退出登录')
-    
+
     // 更新登录状态
     checkLoginStatus()
-    
+
     // 使用window.location.href跳转到首页并刷新
     window.location.href = '/'
 }
@@ -181,5 +184,23 @@ watch(() => props.userInfo, (newInfo) => {
     padding: 10px;
     background-color: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.username {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 5px;
+    transition: all 0.3s ease;
+}
+
+.username:hover {
+    color: var(--primary-color);
 }
 </style>
