@@ -7,6 +7,15 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import axios from 'axios'
 
+// 开发环境下引入mock服务
+if (import.meta.env.DEV) {
+  try {
+    import('./mock/index.js')
+  } catch (error) {
+    console.error('Mock服务加载失败:', error)
+  }
+}
+
 const app = createApp(App);
 
 // 配置axios实例
