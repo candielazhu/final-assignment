@@ -1,9 +1,8 @@
 <template>
     <div class="main">
         <el-scrollbar height="100%" @end-reached="loadMore">
-            <!-- 文章列表框架，后期从API获取数据 -->
-            <div v-if="articles.length > 0">
-                <div v-for="article in articles" :key="article.id" class="article-item" @click="goToTopic(article)">
+            <div v-if="articles.list.length > 0">
+                <div v-for="article in articles.list" :key="article.id" class="article-item" @click="goToTopic(article)">
                     <h3>{{ article.title }}</h3>
                     <p class="article-summary">{{ article.summary }}</p>
                     <div class="article-meta">
@@ -29,12 +28,27 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElSkeleton } from 'element-plus'
-import request from './axios/request.js'
+import request from '../axios/request.js'
+
 
 const router = useRouter()
 
-// 文章列表数据，后期从API获取
-const articles = ref([])
+// 文章列表数据
+const articles = ref({
+    list: []
+})
+const getData =function(){
+    request({
+        url:'/mock/getarticles',
+        method:'get'
+    }).then(res=>{
+        articles.value.list = res.data.data
+        console.log(res.data.data)
+    }).catch(err=>{
+        console.log(err)
+    })
+}
+
 // 加载状态
 const loading = ref(false)
 // 分页参数
@@ -56,7 +70,7 @@ const fetchArticles = async () => {
         // hasMore.value = articles.value.length < response.data.total
 
         // 临时模拟，后期删除
-        articles.value = []
+        articles.value.list = []
         hasMore.value = false
     } catch (error) {
         console.error('加载文章失败:', error)
@@ -83,9 +97,9 @@ const goToTopic = (article) => {
     })
 }
 
-// 组件挂载时加载文章列表
+// 组件挂载时自动加载文章列表
 onMounted(() => {
-    fetchArticles()
+    getData()
 })
 </script>
 
@@ -97,27 +111,63 @@ onMounted(() => {
     color: var(--text-primary);
 }
 
-.scrollbar-demo-item {
+.article-item {
+    padding: 20px;
+    margin-bottom: 20px;
     display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    height: 50px;
-    margin: 10px;
-    text-align: center;
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
 }
 
-.scrollbar-demo-item:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--border-hover);
+.article-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.el-slider {
-    margin-top: 20px;
+.article-item h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.article-summary {
+    margin: 10px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.article-meta span {
+    margin-right: 15px;
+}
+
+.loading-state {
+    padding: 20px;
+}
+
+.empty-state {
+    padding: 40px 0;
+    text-align: center;
+}
+
+.el-scrollbar {
+    height: calc(100vh - 100px);
 }
 </style>

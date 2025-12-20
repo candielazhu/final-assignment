@@ -1,0 +1,46 @@
+import { createApp } from 'vue'
+import './styles/vue.css'
+import './styles/buttons.css'
+import './styles/input.css'
+import './styles/eyes.css'
+
+import App from './App.vue'
+// import App from './router.vue'
+// import App from './components/AxiosPage/AxiosTest.vue'
+
+
+const app = createApp(App)
+
+import request from './axios/request.js'
+import './mock/mockServer.js'
+
+// 引入路由模块
+import router from './js/router.js'
+// 挂载路由
+app.use(router)
+
+// 引入Vant组件库
+import Vant from 'vant'
+import 'vant/lib/index.css'
+// 挂载Vant组件库
+app.use(Vant)
+
+// 引入ElementPlus组件库
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+// 挂载ElementPlus组件库
+app.use(ElementPlus)
+
+import AntDesignVue from 'ant-design-vue'
+import 'ant-design-vue/dist/antd.css'
+// 挂载AntDesignVue组件库
+app.use(AntDesignVue)
+
+// 引入全局组件
+import GlobalComponent from './components/GlobalComponent.vue'  
+import BackgroundComponent from './components/background.vue'
+// 挂载全局组件
+app.component('GlobalComponent', GlobalComponent)
+app.component('BackgroundComponent', BackgroundComponent)
+
+app.mount('#app')
