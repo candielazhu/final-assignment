@@ -3,10 +3,17 @@
         <el-scrollbar class="scrollbar-demo" ref="scrollbarRef">
             <div class="header">
                 &nbsp;
-                <h2>文章详情</h2>
+                <h2>{{ article.title || '文章详情' }}</h2>
                 <el-button type="primary" @click="goBack">返回</el-button>
             </div>
-            <div class="content-wrapper">
+            
+            <!-- 加载中状态 -->
+            <div v-if="loading" class="loading-state">
+                <el-skeleton :rows="5" animated />
+            </div>
+            
+            <!-- 文章内容 -->
+            <div v-else-if="article.id" class="content-wrapper">
                 <div class="markdown-content" ref="markdownRef" v-html="htmlContent">
                 </div>
                 <!-- 锚点容器 -->
@@ -21,8 +28,14 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 文章不存在状态 -->
+            <div v-else class="empty-state">
+                文章不存在
+            </div>
+            
             <!-- 评论组件 -->
-            <Comment :article-id="1" @update:comment-count="updateCommentCount" />
+            <Comment v-if="article.id" :article-id="article.id" @update:comment-count="updateCommentCount" />
         </el-scrollbar>
     </div>
 
@@ -31,7 +44,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElButton } from 'element-plus'
+import { ElButton, ElSkeleton } from 'element-plus'
 import { marked } from 'marked'
 import Comment from './Comment.vue'
 
@@ -39,103 +52,18 @@ const route = useRoute()
 const router = useRouter()
 const markdownRef = ref(null)
 
-// 示例 Markdown 内容
-const sampleMarkdown = `# 文章标题
+// 文章数据，后期从API获取
+const article = ref({
+    id: null,
+    title: '',
+    content: '',
+    author: '',
+    createTime: '',
+    commentCount: 0
+})
 
-这是一篇示例文章，用于展示 Markdown 格式的内容。
-
-## 第一部分
-
-### 1.1 小节标题
-这是第一部分的第一个小节内容。  
-这是第一部分的第一个小节内容。  
-这是第一部分的第一个小节内容。  
-这是第一部分的第一个小节内容。  
-这是第一部分的第一个小节内容。  
-
-### 1.2 另一小节
-这是第一部分的第二个小节内容，包含一些重要信息。  
-这是第一部分的第二个小节内容，包含一些重要信息。  
-这是第一部分的第二个小节内容，包含一些重要信息。  
-这是第一部分的第二个小节内容，包含一些重要信息。  
-这是第一部分的第二个小节内容，包含一些重要信息。  
-
-## 第二部分
-
-### 2.1 新的小节
-这是第二部分的内容，展示了不同级别的标题。  
-这是第二部分的内容，展示了不同级别的标题。  
-这是第二部分的内容，展示了不同级别的标题。  
-这是第二部分的内容，展示了不同级别的标题。  
-这是第二部分的内容，展示了不同级别的标题。  
-
-### 2.2 更多内容
-这里可以添加更多的文章内容，包括各种 Markdown 语法。  
-这里可以添加更多的文章内容，包括各种 Markdown 语法。  
-这里可以添加更多的文章内容，包括各种 Markdown 语法。  
-这里可以添加更多的文章内容，包括各种 Markdown 语法。  
-这里可以添加更多的文章内容，包括各种 Markdown 语法。  
-
-#### 2.2.1 子小节
-这是一个四级标题的子小节。
-
-## 第三部分
-
-这是文章的最后一部分，总结了主要内容。  
-这是文章的最后一部分，总结了主要内容。  
-这是文章的最后一部分，总结了主要内容。  
-这是文章的最后一部分，总结了主要内容。  
-这是文章的最后一部分，总结了主要内容。  
-
-# 期末考核项目
-
-## 项目介绍
-这是一个基于Vue 3 + Vite的期末考核项目，包含登录和注册功能，采用了现代化的样式设计和组件化开发方式。
-
-## 技术栈
-- Vue 3
-- Vite
-- Vue Router 4
-- Element Plus
-- CSS3
-
-## 主要功能
-1. **用户登录**：支持用户名密码登录
-2. **用户注册**：支持新用户注册
-3. **样式隔离**：登录和注册组件采用了scoped样式和唯一前缀，确保样式不相互影响
-4. **响应式设计**：适配不同屏幕尺寸
-5. **现代化UI**：采用了水滴形状的设计风格
-
-## 主要依赖
-
-## 运行方式
-
-### 安装依赖
-
-### 启动开发服务器
-### 构建生产版本
-
-### 预览生产版本
-
-## 项目结构
-
-## 样式设计
-- 采用了水滴形状的现代化设计
-- 实现了组件间的样式隔离
-- 使用了CSS3的阴影、过渡和变换效果
-- 响应式布局设计
-
-## 开发说明
-- 组件采用了Vue 3的Composition API
-- 使用了Element Plus的消息提示组件
-- 采用了Vue Router进行路由管理
-- 实现了基本的表单验证
-- 使用localStorage和Cookie存储用户信息
-
-## 版权说明
-本项目仅用于期末考核，请勿用于商业用途。
-
-`
+// 加载状态
+const loading = ref(false)
 
 // 锚点相关数据
 const anchors = ref([])
@@ -148,7 +76,8 @@ const generateId = (text) => {
 
 // 将 Markdown 转换为 HTML，并添加ID
 const htmlContent = computed(() => {
-    const html = marked(sampleMarkdown)
+    if (!article.value.content) return ''
+    const html = marked(article.value.content)
     // 在返回HTML前，我们会在DOM更新后提取标题并生成锚点
     return html
 })
@@ -220,6 +149,33 @@ const handleScroll = () => {
     activeAnchor.value = currentActive
 }
 
+// 获取文章详情
+const fetchArticleDetail = async () => {
+    const id = route.params.id
+    if (!id) return
+    
+    loading.value = true
+    try {
+        // 后期替换为真实API调用
+        // const response = await axios.get(`/api/articles/${id}`)
+        // article.value = response.data.article
+        
+        // 临时模拟，后期删除
+        article.value = {
+            id: id,
+            title: '示例文章标题',
+            content: '# 示例文章\n\n这是一篇示例文章，用于展示文章详情页面。\n\n## 第一部分\n\n### 1.1 小节标题\n这是第一部分的内容。\n\n## 第二部分\n\n### 2.1 小节标题\n这是第二部分的内容。',
+            author: '示例作者',
+            createTime: '2023-01-01',
+            commentCount: 0
+        }
+    } catch (error) {
+        console.error('获取文章详情失败:', error)
+    } finally {
+        loading.value = false
+    }
+}
+
 const goBack = () => {
     router.go(-1) // 返回上一页
 }
@@ -227,6 +183,7 @@ const goBack = () => {
 // 更新评论数量
 const updateCommentCount = (count) => {
     // 这里可以更新文章的评论数量
+    article.value.commentCount = count
     console.log('评论数量:', count)
 }
 
@@ -237,11 +194,18 @@ watch(htmlContent, () => {
     })
 })
 
+// 监听路由参数变化，重新获取文章详情
+watch(() => route.params.id, (newId) => {
+    if (newId) {
+        fetchArticleDetail()
+    }
+})
+
 // 组件挂载后提取锚点并添加滚动监听
 onMounted(() => {
-    nextTick(() => {
-        extractAnchors()
-    })
+    // 获取文章详情
+    fetchArticleDetail()
+    
     window.addEventListener('scroll', handleScroll)
 })
 
