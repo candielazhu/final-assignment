@@ -3,39 +3,23 @@
         <el-avatar :icon="UserFilled" />
         <el-input v-model="input" style="width: 480px" placeholder="搜索" />
         <div>
-            <el-button 
-                type="primary" 
-                @click="handleAuthButtonClick" 
-                plain
-            >
-                {{ isLoggedIn ? '退出登录' : '登录' }}
-            </el-button>
+            <el-button type="primary" @click="logout" plain>退出登录</el-button>
             <el-switch v-model="value1" @change="handleThemeChange" />
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { UserFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const route = useRoute()
 
 // 主题切换开关状态
 const value1 = ref(true)
 const input = ref('')
-// 登录状态
-const isLoggedIn = ref(false)
-
-// 检查登录状态
-const checkLoginStatus = () => {
-    const cookieLoggedIn = document.cookie.includes('isLoggedIn=true')
-    const localStorageLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
-    isLoggedIn.value = cookieLoggedIn || localStorageLoggedIn
-}
 
 // 主题切换函数
 const toggleTheme = () => {
@@ -49,17 +33,6 @@ const handleThemeChange = () => {
     toggleTheme()
 }
 
-// 登录/退出按钮点击事件
-const handleAuthButtonClick = () => {
-    if (isLoggedIn.value) {
-        // 执行退出登录逻辑
-        logout()
-    } else {
-        // 跳转到登录页面
-        router.push('/login')
-    }
-}
-
 const logout = () => {
     // 清除登录状态
     localStorage.removeItem('isLoggedIn')
@@ -68,7 +41,7 @@ const logout = () => {
     router.push('/login')
 }
 
-// 初始化主题和登录状态
+// 初始化主题
 onMounted(() => {
     // 从本地存储获取主题偏好，否则使用系统偏好
     const savedTheme = localStorage.getItem('theme')
@@ -77,14 +50,6 @@ onMounted(() => {
     
     value1.value = isDark
     toggleTheme()
-    
-    // 检查登录状态
-    checkLoginStatus()
-})
-
-// 监听路由变化，更新登录状态
-watch(() => route.path, () => {
-    checkLoginStatus()
 })
 </script>
 

@@ -185,31 +185,21 @@ const scrollToAnchor = (id) => {
 
 // 监听滚动，高亮当前锚点
 const handleScroll = () => {
-    if (!markdownRef.value || anchors.value.length === 0) return
-    
-    // 获取markdown内容容器的滚动位置
-    const markdownRect = markdownRef.value.getBoundingClientRect()
-    const scrollPosition = window.scrollY + window.innerHeight / 3 // 调整滚动位置，使用视口高度的1/3作为判断点
-    
+    if (!markdownRef.value) return
+
+    const scrollPosition = window.scrollY + 100
     let currentActive = ''
-    
+
     // 从后往前检查，找到第一个可见的标题
     for (let i = anchors.value.length - 1; i >= 0; i--) {
         const anchor = anchors.value[i]
         const element = document.getElementById(anchor.id)
-        if (element) {
-            const elementRect = element.getBoundingClientRect()
-            // 计算元素相对于文档顶部的位置
-            const elementTop = elementRect.top + window.scrollY
-            
-            // 当标题进入视口1/3位置时，高亮该锚点
-            if (elementTop <= scrollPosition) {
-                currentActive = anchor.id
-                break
-            }
+        if (element && element.offsetTop <= scrollPosition) {
+            currentActive = anchor.id
+            break
         }
     }
-    
+
     activeAnchor.value = currentActive
 }
 

@@ -51,7 +51,7 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    redirect: '/' // 未找到页面时重定向到index页面
+    redirect: '/login' // 未找到页面时重定向到登录页
   }
 ]
 
