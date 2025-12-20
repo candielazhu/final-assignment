@@ -17,6 +17,7 @@
             </div>
             <a href="#" class="login-btns">忘记密码？</a>
             <router-link to="/register" class="login-btns login-signup">注册</router-link>
+            <router-link to="/" class="login-btns login-back">返回首页</router-link>
         </div>
     </div>
 </template>
@@ -264,6 +265,24 @@ const getCookie = (name) => {
     border-radius: 50%;
     background: #fff;
     opacity: 0.45;
+}
+
+.login-btns.login-back {
+    bottom: -100px;
+    right: 30px;
+    width: 80px;
+    height: 80px;
+    border-radius: 49% 51% 52% 48% / 63% 59% 41% 37%;
+    background: #4bd36d;
+    box-shadow: inset 10px 10px 10px rgba(1, 180, 255, 0.05),
+        15px 25px 10px rgba(1, 180, 255, 0.1), 15px 20px 20px rgba(1, 180, 255, 0.1),
+        inset -10px -10px 15px rgba(255, 255, 255, 0.5);
+}
+
+.login-btns.login-back::before {
+    left: 20px;
+    width: 15px;
+    height: 15px;
 }
 
 .login-btns.login-signup {
