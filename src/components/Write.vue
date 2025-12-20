@@ -42,12 +42,6 @@
                         spellcheck="false"
                     />
                 </el-form-item>
-                <el-form-item label="状态" prop="status">
-                    <el-radio-group v-model="form.status">
-                        <el-radio label="draft">草稿</el-radio>
-                        <el-radio label="published">已发布</el-radio>
-                    </el-radio-group>
-                </el-form-item>
             </el-form>
         </div>
     </div>
