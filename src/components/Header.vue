@@ -17,7 +17,7 @@
                     <el-avatar :icon="UserFilled" :src="userInfo.avatar" style="cursor: pointer;" />
                 </template>
                 <div style="text-align: center; padding: 10px 0;">
-                    <el-menu class="el-menu-vertical-demo" @select="handleSelect">
+                    <el-menu class="el-menu-vertical-demo">
                         <el-menu-item-group>
                             <el-menu-item index="1" @click="handleAuthButtonClick">
                                 {{ isLoggedIn ? '退出登录' : '登录' }}
