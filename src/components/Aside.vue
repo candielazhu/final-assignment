@@ -2,18 +2,26 @@
     <div class="aside">
         <el-row class="tac">
             <el-col width="100%">
-                <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose" @select="handleSelect" :unique-opened="true" style="width: 100%">
+                <el-menu 
+                    :default-active="menuActive" 
+                    class="el-menu-vertical-demo" 
+                    @open="handleOpen" 
+                    @close="handleClose" 
+                    @select="handleSelect" 
+                    :unique-opened="true" 
+                    style="width: 100%"
+                >
                     <el-menu-item index="2" @click="navigateTo('Main')">
                         <el-icon>
                             <CoffeeCup />
                         </el-icon>
-                        <span>话题</span>
+                        <template #title>话题</template>
                     </el-menu-item>
                     <el-menu-item index="4" @click="navigateTo('Write')" :disabled="!isLoggedIn">
                         <el-icon>
                             <Edit />
                         </el-icon>
-                        <span>发布</span>
+                        <template #title>发布</template>
                     </el-menu-item>
                     <el-sub-menu index="1">
                         <template #title>
@@ -49,10 +57,24 @@ import {
     Edit
 } from '@element-plus/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject, watch } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// 接收父组件传递的Props
+const props = defineProps({
+    menuActive: {
+        type: String,
+        default: '2'
+    }
+})
+
+// 定义发送给父组件的事件
+const emit = defineEmits(['menu-select'])
+
+// 注入全局状态
+const appState = inject('appState', null)
 
 // 登录状态检查
 const isLoggedIn = ref(false)
@@ -62,6 +84,11 @@ const checkLoginStatus = () => {
     const cookieLoggedIn = document.cookie.includes('isLoggedIn=true')
     const localStorageLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
     isLoggedIn.value = cookieLoggedIn || localStorageLoggedIn
+    
+    // 更新全局状态
+    if (appState) {
+        appState.isLoggedIn.value = isLoggedIn.value
+    }
 }
 
 // 导航到指定路由
@@ -69,20 +96,24 @@ const navigateTo = (routeName) => {
     router.push({ name: routeName })
 }
 
-const handleOpen = (key, keyPath) => {
-    console.log(key, keyPath)
-}
-const handleClose = (key, keyPath) => {
-    console.log(key, keyPath)
+// 菜单选择处理
+const handleSelect = (key, keyPath) => {
+    console.log('Aside 菜单选择:', key, keyPath)
+    emit('menu-select', key)
 }
 
-const handleSelect = (key, keyPath) => {
-    console.log('选中菜单:', key, keyPath)
+const handleOpen = (key, keyPath) => {
+    console.log('Aside 菜单展开:', key, keyPath)
+}
+
+const handleClose = (key, keyPath) => {
+    console.log('Aside 菜单收起:', key, keyPath)
 }
 
 // 组件挂载时检查登录状态
 onMounted(() => {
     checkLoginStatus()
+    
     // 监听路由变化，更新激活状态
     router.afterEach(() => {
         checkLoginStatus()
@@ -96,6 +127,7 @@ onMounted(() => {
     border-right: 1px solid var(--border-color);
 }
 
+/* 菜单容器样式 */
 :deep(.el-menu) {
     background-color: var(--bg-secondary);
     border-right: none;
