@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElButton } from 'element-plus'
 import { marked } from 'marked'
@@ -243,6 +243,11 @@ onMounted(() => {
         extractAnchors()
     })
     window.addEventListener('scroll', handleScroll)
+})
+
+// 组件卸载前移除滚动监听
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
