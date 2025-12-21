@@ -6,7 +6,16 @@ const { marked } = require('marked');
 // 获取文章列表
 async function getArticles(req, res) {
   try {
-    // 从数据库获取文章列表
+    // 调试日志
+    console.log('req.query:', req.query);
+    console.log('req.body:', req.body);
+    
+    // 获取当前用户ID（从前端传递或使用默认值）
+    const currentUserId = (req.query && req.query.user_id) || (req.body && req.body.user_id) || null;
+    
+    // 从数据库获取文章列表，过滤条件：
+    // 1. 已发布的文章对所有用户可见
+    // 2. 草稿文章仅对作者可见
     const sql = `
       SELECT 
         a.id, a.title, a.summary, a.category_id, a.user_id as author_id, 
@@ -16,10 +25,11 @@ async function getArticles(req, res) {
       FROM articles a
       LEFT JOIN categories c ON a.category_id = c.id
       LEFT JOIN users u ON a.user_id = u.id
+      WHERE a.status = 'published' OR (a.status = 'draft' AND a.user_id = ?)
       ORDER BY a.created_at DESC
     `;
     
-    const articles = await executeQuery(sql);
+    const articles = await executeQuery(sql, [currentUserId || 0]);
     
     res.json({
       code: 200,
@@ -40,8 +50,16 @@ async function getArticles(req, res) {
 async function getArticleById(req, res) {
   try {
     const id = req.params.id;
+    // 调试日志
+    console.log('req.query:', req.query);
+    console.log('req.body:', req.body);
     
-    // 从数据库获取文章基本信息
+    // 获取当前用户ID（从前端传递或使用默认值）
+    const currentUserId = (req.query && req.query.user_id) || (req.body && req.body.user_id) || null;
+    
+    // 从数据库获取文章基本信息，过滤条件：
+    // 1. 已发布的文章对所有用户可见
+    // 2. 草稿文章仅对作者可见
     const sql = `
       SELECT 
         a.id, a.title, a.summary, a.category_id, a.user_id as author_id, 
@@ -51,10 +69,10 @@ async function getArticleById(req, res) {
       FROM articles a
       LEFT JOIN categories c ON a.category_id = c.id
       LEFT JOIN users u ON a.user_id = u.id
-      WHERE a.id = ?
+      WHERE a.id = ? AND (a.status = 'published' OR (a.status = 'draft' AND a.user_id = ?))
     `;
     
-    const articles = await executeQuery(sql, [id]);
+    const articles = await executeQuery(sql, [id, currentUserId || 0]);
     
     if (articles.length === 0) {
       return res.status(404).json({
@@ -116,13 +134,17 @@ async function createArticle(req, res) {
     // 使用前端传递的用户ID，如果没有则使用默认值1
     const user_id = req.body.user_id || 1;
     
+    // 提供默认值以避免undefined错误
+    const safeCategoryId = category_id || null;
+    const safeStatus = status || 'draft';
+    
     // 插入文章到数据库
     const sql = `
       INSERT INTO articles (title, summary, content, html_content, category_id, user_id, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     
-    const result = await executeQuery(sql, [title, summary, content, html_content, category_id, user_id, status]);
+    const result = await executeQuery(sql, [title, summary, content, html_content, safeCategoryId, user_id, safeStatus]);
     
     // 获取插入的文章ID
     const articleId = result.insertId;

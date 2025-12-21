@@ -58,9 +58,16 @@ const formatDate = (dateString) => {
 
 // 获取文章数据
 const getData = function() {
+    // 获取当前登录用户信息
+    const userInfoStr = localStorage.getItem('userInfo')
+    const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {}
+    
     request({
         url: '/articles',
-        method: 'get'
+        method: 'get',
+        params: {
+            user_id: userInfo.id || null
+        }
     }).then(res => {
         let articleList = res.data.data
         console.log('获取到的文章数据:', articleList)

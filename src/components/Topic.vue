@@ -212,13 +212,20 @@ const handleScroll = () => {
 const fetchArticleDetail = async () => {
     const id = parseInt(route.params.id)
     if (!id) return
+    
+    // 获取当前登录用户信息
+    const userInfoStr = localStorage.getItem('userInfo')
+    const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {}
 
     loading.value = true
     try {
         // 使用mock接口获取文章详情
         const response = await request({
             url: `/articles/${id}`,
-            method: 'get'
+            method: 'get',
+            params: {
+                user_id: userInfo.id || null
+            }
         })
 
         if (response.data.code === 200) {
