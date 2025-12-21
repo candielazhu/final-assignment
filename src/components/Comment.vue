@@ -14,11 +14,13 @@
                         type="textarea"
                         :rows="3"
                         placeholder="写下你的评论..."
+                        :maxlength="500"
+                        show-word-limit
                     />
                 </el-form-item>
                 <el-form-item>
                     <div class="form-actions">
-                        <el-button type="primary" @click="submitComment">提交评论</el-button>
+                        <el-button type="primary" @click="submitComment" :loading="submitting">提交评论</el-button>
                         <el-button @click="resetForm">取消</el-button>
                     </div>
                 </el-form-item>
@@ -29,25 +31,35 @@
         </div>
         
         <!-- 评论列表 -->
-        <div class="comment-list">
+        <div class="comment-list" v-loading="loading">
             <div 
                 v-for="comment in comments" 
                 :key="comment.id" 
                 class="comment-item"
             >
                 <div class="comment-header-info">
-                    <el-avatar :icon="UserFilled" :size="36" />
+                    <el-avatar :src="comment.avatar" :size="36">
+                        <UserFilled v-if="!comment.avatar" />
+                    </el-avatar>
                     <div class="comment-meta">
                         <div class="comment-author">{{ comment.username || '匿名用户' }}</div>
                         <div class="comment-time">{{ formatDate(comment.created_at) }}</div>
                     </div>
                     <div class="comment-actions" v-if="isLoggedIn">
                         <el-button 
-                            type="text" 
+                            type="link" 
                             size="small" 
                             @click="replyComment(comment)"
                         >
                             回复
+                        </el-button>
+                        <el-button 
+                            type="link" 
+                            size="small" 
+                            @click="editComment(comment)"
+                            v-if="comment.user_id === currentUserId"
+                        >
+                            编辑
                         </el-button>
                         <el-popconfirm
                             v-if="comment.user_id === currentUserId"
@@ -56,7 +68,7 @@
                         >
                             <template #reference>
                                 <el-button 
-                                    type="text" 
+                                    type="link" 
                                     size="small"
                                     danger
                                 >
@@ -67,7 +79,27 @@
                         </el-popconfirm>
                     </div>
                 </div>
-                <div class="comment-content">{{ comment.content }}</div>
+                <!-- 评论内容或编辑表单 -->
+                <div class="comment-content" v-if="!comment.isEditing">
+                    {{ comment.content }}
+                </div>
+                <div class="comment-edit-form" v-else>
+                    <el-form ref="editFormRef" :model="editForm" label-width="0">
+                        <el-form-item prop="content">
+                            <el-input
+                                v-model="editForm.content"
+                                type="textarea"
+                                :rows="2"
+                                :maxlength="500"
+                                show-word-limit
+                            />
+                        </el-form-item>
+                        <div class="form-actions">
+                            <el-button type="primary" @click="saveEdit(comment)" size="small">保存</el-button>
+                            <el-button @click="cancelEdit(comment)" size="small">取消</el-button>
+                        </div>
+                    </el-form>
+                </div>
                 
                 <!-- 回复评论 -->
                 <div class="comment-reply-form" v-if="replyingTo === comment.id">
@@ -78,12 +110,14 @@
                                 type="textarea"
                                 :rows="2"
                                 placeholder="写下你的回复..."
+                                :maxlength="500"
+                                show-word-limit
                             />
                         </el-form-item>
                         <el-form-item>
                             <div class="form-actions">
-                                <el-button type="primary" @click="submitReply(comment)">提交回复</el-button>
-                                <el-button @click="cancelReply">取消</el-button>
+                                <el-button type="primary" @click="submitReply(comment)" size="small" :loading="submittingReply">提交回复</el-button>
+                                <el-button @click="cancelReply" size="small">取消</el-button>
                             </div>
                         </el-form-item>
                     </el-form>
@@ -97,18 +131,28 @@
                         class="comment-child"
                     >
                         <div class="comment-header-info">
-                            <el-avatar :icon="UserFilled" :size="32" />
+                            <el-avatar :src="child.avatar" :size="32">
+                                <UserFilled v-if="!child.avatar" />
+                            </el-avatar>
                             <div class="comment-meta">
                                 <div class="comment-author">{{ child.username || '匿名用户' }}</div>
                                 <div class="comment-time">{{ formatDate(child.created_at) }}</div>
                             </div>
                             <div class="comment-actions" v-if="isLoggedIn">
                                 <el-button 
-                                    type="text" 
+                                    type="link" 
                                     size="small" 
                                     @click="replyComment(child)"
                                 >
                                     回复
+                                </el-button>
+                                <el-button 
+                                    type="link" 
+                                    size="small" 
+                                    @click="editComment(child)"
+                                    v-if="child.user_id === currentUserId"
+                                >
+                                    编辑
                                 </el-button>
                                 <el-popconfirm
                                     v-if="child.user_id === currentUserId"
@@ -117,19 +161,35 @@
                                 >
                                     <template #reference>
                                         <el-button 
-                                            type="text" 
-                                            size="small"
-                                            danger
-                                        >
-                                            <el-icon><Delete /></el-icon>
-                                            删除
-                                        </el-button>
+                                        type="link" 
+                                        size="small"
+                                        danger
+                                    >
+                                        <el-icon><Delete /></el-icon>
+                                        删除
+                                    </el-button>
                                     </template>
                                 </el-popconfirm>
                             </div>
                         </div>
-                        <div class="comment-content">
+                        <!-- 子评论内容或编辑表单 -->
+                        <div class="comment-content" v-if="!child.isEditing">
                             <span class="reply-to">@{{ comment.username }}</span> {{ child.content }}
+                        </div>
+                        <div class="comment-edit-form" v-else>
+                            <el-form ref="childEditFormRef" :model="childEditForm" label-width="0">
+                                <el-input
+                                    v-model="childEditForm.content"
+                                    type="textarea"
+                                    :rows="2"
+                                    :maxlength="500"
+                                    show-word-limit
+                                />
+                            </el-form>
+                            <div class="form-actions">
+                                <el-button type="primary" @click="saveChildEdit(child, comment)" size="small">保存</el-button>
+                                <el-button @click="cancelChildEdit(child)" size="small">取消</el-button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -137,8 +197,21 @@
         </div>
         
         <!-- 空评论提示 -->
-        <div class="empty-comments" v-if="comments.length === 0">
+        <div class="empty-comments" v-if="comments.length === 0 && !loading">
             <el-empty description="暂无评论，快来抢沙发吧！" />
+        </div>
+        
+        <!-- 分页 -->
+        <div class="comment-pagination" v-if="total > limit">
+            <el-pagination
+                v-model:current-page="page"
+                v-model:page-size="limit"
+                :page-sizes="[5, 10, 20, 50]"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="total"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+            />
         </div>
     </div>
 </template>
@@ -148,6 +221,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElPopconfirm } from 'element-plus'
 import { UserFilled, Delete } from '@element-plus/icons-vue'
+import request from '../axios/request' // 导入axios请求实例
 
 // Props
 const props = defineProps({
@@ -162,6 +236,11 @@ const emit = defineEmits(['update:commentCount'])
 
 // Router
 const router = useRouter()
+
+// 加载状态
+const loading = ref(false)
+const submitting = ref(false)
+const submittingReply = ref(false)
 
 // 登录状态
 const isLoggedIn = ref(false)
@@ -180,17 +259,39 @@ const replyForm = ref({
 })
 const replyingTo = ref(null)
 
+// 编辑表单
+const editFormRef = ref(null)
+const editForm = ref({
+    content: ''
+})
+
+const childEditFormRef = ref(null)
+const childEditForm = ref({
+    content: ''
+})
+
 // 评论列表
 const comments = ref([])
+const total = ref(0)
+const page = ref(1)
+const limit = ref(10)
 
 // 检查登录状态
 const checkLoginStatus = () => {
-    const cookieLoggedIn = document.cookie.includes('isLoggedIn=true')
-    const localStorageLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
-    isLoggedIn.value = cookieLoggedIn || localStorageLoggedIn
-    
-    // 模拟获取当前用户ID（实际项目中应从登录状态获取）
-    currentUserId.value = isLoggedIn.value ? 1 : null
+    const userInfo = localStorage.getItem('userInfo')
+    if (userInfo) {
+        try {
+            const user = JSON.parse(userInfo)
+            isLoggedIn.value = true
+            currentUserId.value = user.id
+        } catch (error) {
+            isLoggedIn.value = false
+            currentUserId.value = null
+        }
+    } else {
+        isLoggedIn.value = false
+        currentUserId.value = null
+    }
 }
 
 // 格式化日期
@@ -213,34 +314,24 @@ const submitComment = async () => {
         return
     }
     
+    submitting.value = true
     try {
-        // 后期替换为真实API调用
-        // const response = await axios.post('/api/comments', {
-        //     article_id: props.articleId,
-        //     content: commentForm.value.content.trim(),
-        //     parent_id: null
-        // })
-        
-        // 临时模拟，后期删除
-        const newComment = {
-            id: Date.now(),
+        const response = await request.post('/comments', {
             article_id: props.articleId,
-            user_id: currentUserId.value,
-            username: '当前用户',
             content: commentForm.value.content.trim(),
             parent_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            children: []
-        }
+            user_id: currentUserId.value
+        })
         
-        comments.value.unshift(newComment)
-        emit('update:commentCount', comments.value.length)
+        // 重新获取评论列表
+        await fetchComments()
         ElMessage.success('评论成功')
         resetForm()
     } catch (error) {
         console.error('提交评论失败:', error)
-        ElMessage.error('评论失败，请稍后重试')
+        ElMessage.error(error.response?.data?.message || '评论失败，请稍后重试')
+    } finally {
+        submitting.value = false
     }
 }
 
@@ -263,37 +354,24 @@ const submitReply = async (parentComment) => {
         return
     }
     
+    submittingReply.value = true
     try {
-        // 后期替换为真实API调用
-        // const response = await axios.post('/api/comments', {
-        //     article_id: props.articleId,
-        //     content: replyForm.value.content.trim(),
-        //     parent_id: parentComment.id
-        // })
-        
-        // 临时模拟，后期删除
-        const newReply = {
-            id: Date.now(),
+        const response = await request.post('/comments', {
             article_id: props.articleId,
-            user_id: currentUserId.value,
-            username: '当前用户',
             content: replyForm.value.content.trim(),
             parent_id: parentComment.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }
+            user_id: currentUserId.value
+        })
         
-        // 添加回复到父评论
-        if (!parentComment.children) {
-            parentComment.children = []
-        }
-        parentComment.children.push(newReply)
-        emit('update:commentCount', comments.value.length)
+        // 重新获取评论列表
+        await fetchComments()
         ElMessage.success('回复成功')
         cancelReply()
     } catch (error) {
         console.error('提交回复失败:', error)
-        ElMessage.error('回复失败，请稍后重试')
+        ElMessage.error(error.response?.data?.message || '回复失败，请稍后重试')
+    } finally {
+        submittingReply.value = false
     }
 }
 
@@ -301,31 +379,95 @@ const submitReply = async (parentComment) => {
 const cancelReply = () => {
     replyingTo.value = null
     replyForm.value.content = ''
-    replyFormRef.value?.resetFields()
+    // 安全检查，确保resetFields函数存在
+    if (replyFormRef.value && typeof replyFormRef.value.resetFields === 'function') {
+        replyFormRef.value.resetFields()
+    }
+}
+
+// 编辑评论
+const editComment = (comment) => {
+    comment.isEditing = true
+    if (comment.parent_id) {
+        childEditForm.value.content = comment.content
+    } else {
+        editForm.value.content = comment.content
+    }
+}
+
+// 保存编辑
+const saveEdit = async (comment) => {
+    if (!editForm.value.content.trim()) {
+        ElMessage.warning('请输入评论内容')
+        return
+    }
+    
+    try {
+        const response = await request.put(`/comments/${comment.id}`, {
+            content: editForm.value.content.trim(),
+            user_id: currentUserId.value
+        })
+        
+        // 更新本地评论内容
+        comment.content = editForm.value.content.trim()
+        comment.isEditing = false
+        ElMessage.success('编辑成功')
+    } catch (error) {
+        console.error('编辑评论失败:', error)
+        ElMessage.error(error.response?.data?.message || '编辑失败，请稍后重试')
+    }
+}
+
+// 取消编辑
+const cancelEdit = (comment) => {
+    comment.isEditing = false
+    editForm.value.content = ''
+}
+
+// 保存子评论编辑
+const saveChildEdit = async (comment, parentComment) => {
+    if (!childEditForm.value.content.trim()) {
+        ElMessage.warning('请输入评论内容')
+        return
+    }
+    
+    try {
+        const response = await request.put(`/comments/${comment.id}`, {
+            content: childEditForm.value.content.trim(),
+            user_id: currentUserId.value
+        })
+        
+        // 更新本地评论内容
+        comment.content = childEditForm.value.content.trim()
+        comment.isEditing = false
+        ElMessage.success('编辑成功')
+    } catch (error) {
+        console.error('编辑评论失败:', error)
+        ElMessage.error(error.response?.data?.message || '编辑失败，请稍后重试')
+    }
+}
+
+// 取消子评论编辑
+const cancelChildEdit = (comment) => {
+    comment.isEditing = false
+    childEditForm.value.content = ''
 }
 
 // 删除评论
 const deleteComment = async (commentId) => {
     try {
-        // 后期替换为真实API调用
-        // await axios.delete(`/api/comments/${commentId}`)
-        
-        // 临时模拟，后期删除
-        comments.value = comments.value.filter(comment => {
-            if (comment.id === commentId) {
-                return false
+        const response = await request.delete(`/comments/${commentId}`, {
+            data: {
+                user_id: currentUserId.value
             }
-            // 删除子评论
-            if (comment.children) {
-                comment.children = comment.children.filter(child => child.id !== commentId)
-            }
-            return true
         })
-        emit('update:commentCount', comments.value.length)
+        
+        // 重新获取评论列表
+        await fetchComments()
         ElMessage.success('删除成功')
     } catch (error) {
         console.error('删除评论失败:', error)
-        ElMessage.error('删除失败，请稍后重试')
+        ElMessage.error(error.response?.data?.message || '删除失败，请稍后重试')
     }
 }
 
@@ -336,18 +478,32 @@ const toLogin = () => {
 
 // 获取评论数据
 const fetchComments = async () => {
+    loading.value = true
     try {
-        // 后期替换为真实API调用
-        // const response = await axios.get(`/api/comments?article_id=${props.articleId}`)
-        // comments.value = response.data.comments
-        
-        // 临时模拟，后期删除
-        comments.value = []
-        emit('update:commentCount', comments.value.length)
+        const response = await request.get(`/comments?article_id=${props.articleId}&page=${page.value}&limit=${limit.value}`)
+        comments.value = response.data.data.comments
+        total.value = response.data.data.total
+        page.value = response.data.data.page
+        limit.value = response.data.data.limit
+        emit('update:commentCount', total.value)
     } catch (error) {
         console.error('获取评论失败:', error)
-        ElMessage.error('获取评论失败，请稍后重试')
+        ElMessage.error(error.response?.data?.message || '获取评论失败，请稍后重试')
+    } finally {
+        loading.value = false
     }
+}
+
+// 分页处理
+const handleSizeChange = (newSize) => {
+    limit.value = newSize
+    page.value = 1
+    fetchComments()
+}
+
+const handleCurrentChange = (newPage) => {
+    page.value = newPage
+    fetchComments()
 }
 
 // 初始化
@@ -465,6 +621,15 @@ watch(() => router.currentRoute.value.path, () => {
     border-left: 3px solid var(--primary-color);
 }
 
+.comment-edit-form {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
 .comment-children {
     margin-top: 15px;
     margin-left: 46px;
@@ -490,5 +655,11 @@ watch(() => router.currentRoute.value.path, () => {
     text-align: center;
     padding: 40px 20px;
     color: var(--text-secondary);
+}
+
+.comment-pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
 }
 </style>
