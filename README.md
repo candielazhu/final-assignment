@@ -1,11 +1,13 @@
 # 期末考核项目
 
 ## 项目介绍
+
 这是一个基于Vue 3 + Vite的现代化博客系统，采用前后端分离架构，包含用户认证、文章管理、评论功能等核心模块。后端使用Node.js + Express + MySQL实现，已成功连接云数据库。
 
 ## 技术栈
 
 ### 前端
+
 - **前端框架**：Vue 3.5.26 (Composition API)
 - **构建工具**：Vite 5.4.10
 - **路由管理**：Vue Router 4
@@ -13,10 +15,10 @@
 - **HTTP客户端**：Axios 1.13.2
 - **图标库**：@element-plus/icons-vue 2.3.2
 - **Markdown渲染**：marked ^17.0.1
-- **模拟数据**：Mock.js 1.1.0（开发环境）
 - **样式**：CSS3 + CSS变量
 
 ### 后端
+
 - **运行环境**：Node.js
 - **Web框架**：Express
 - **数据库**：MySQL 8.0（云数据库）
@@ -28,12 +30,14 @@
 ## 主要功能
 
 ### 1. 用户认证
+
 - ✅ 用户登录与注册
 - ✅ 登录状态管理（localStorage + Cookie）
 - ✅ 动态按钮切换（登录/退出登录）
 - ✅ 样式隔离设计
 
 ### 2. 文章管理
+
 - ✅ 文章列表展示（从云数据库获取）
 - ✅ 文章详情查看（支持Markdown渲染）
 - ✅ 文章发布功能（登录后可用）
@@ -46,6 +50,7 @@
 - ✅ 草稿标签显示（在文章列表中）
 
 ### 3. 评论系统
+
 - ✅ 独立的评论组件（Comment.vue）
 - ✅ 支持评论发布与嵌套回复
 - ✅ 评论编辑功能（仅作者可用）
@@ -58,12 +63,14 @@
 - ✅ 支持回复@用户名显示
 
 ### 4. 导航与路由
+
 - ✅ 侧边栏导航菜单
 - ✅ 路由重定向（404跳转至index）
 - ✅ 登录状态路由控制
 - ✅ 发布按钮权限控制
 
 ### 5. UI设计
+
 - ✅ 现代化水滴形状设计
 - ✅ 响应式布局设计
 - ✅ 组件样式隔离
@@ -74,7 +81,7 @@
 
 ```bash
 # 前端依赖
-npm install vue@^3.5.26 vue-router@4 element-plus@^2.13.0 axios@^1.13.2 mockjs@1.1.0 @element-plus/icons-vue@^2.3.2 marked@^17.0.1 --save
+npm install vue@^3.5.26 vue-router@4 element-plus@^2.13.0 axios@^1.13.2 @element-plus/icons-vue@^2.3.2 marked@^17.0.1 --save
 
 # 后端依赖
 npm install express mysql2 cors dotenv nodemon --save
@@ -141,11 +148,14 @@ npm run preview
 │   ├── index.js             # 后端入口文件
 │   └── package.json         # 后端依赖配置
 ├── src/                     # 前端源代码
+│   ├── assets/              # 静态资源
+│   │   └── vue.svg          # Vue标志
 │   ├── axios/               # Axios配置
 │   │   └── request.js       # 请求拦截与配置
 │   ├── components/          # 组件
 │   │   ├── Aside.vue        # 侧边栏导航
 │   │   ├── Comment.vue      # 评论组件
+│   │   ├── footer.vue       # 页脚组件
 │   │   ├── Header.vue       # 顶部导航栏
 │   │   ├── Index.vue        # 首页容器
 │   │   ├── Login.vue        # 登录组件
@@ -153,10 +163,6 @@ npm run preview
 │   │   ├── Register.vue     # 注册组件
 │   │   ├── Topic.vue        # 文章详情
 │   │   └── Write.vue        # 文章编写
-│   ├── mock/                # Mock数据
-│   ├── services/            # 服务相关
-│   │   ├── articles/        # Markdown文章内容
-│   │   └── article.json     # 文章列表数据
 │   ├── App.vue              # 根组件
 │   ├── main.js              # 入口文件
 │   ├── router.js            # 路由配置
@@ -177,6 +183,7 @@ npm run preview
 ## 数据库设计
 
 ### 云数据库配置
+
 - **数据库类型**：MySQL 8.0
 - **数据库地址**：47.115.214.161
 - **数据库名称**：lscvue
@@ -184,6 +191,7 @@ npm run preview
 - **用户名**：root
 
 ### 核心表结构
+
 - **users**：用户信息表
 - **articles**：文章表
 - **comments**：评论表
@@ -192,6 +200,7 @@ npm run preview
 - **article_tags**：文章标签关联表
 
 ### 详细设计
+
 查看完整的数据库设计文档：[database-design.md](database-design.md)
 
 ## API接口设计
@@ -199,6 +208,7 @@ npm run preview
 ### 已实现的API接口
 
 #### 文章相关接口
+
 - `GET /api/articles` - 获取文章列表（支持草稿置顶）
 - `GET /api/articles/:id` - 获取文章详情（支持Markdown渲染）
 - `POST /api/articles` - 创建文章（支持草稿和发布）
@@ -206,30 +216,36 @@ npm run preview
 - `DELETE /api/articles/:id` - 删除文章（仅作者可用）
 
 #### 分类相关接口
+
 - `GET /api/categories` - 获取分类列表
 
 #### 评论相关接口
+
 - `GET /api/comments?article_id=:id` - 获取文章评论列表（支持分页）
 - `POST /api/comments` - 添加文章评论或回复
 - `PUT /api/comments/:id` - 编辑评论（仅作者可用）
 - `DELETE /api/comments/:id` - 删除评论（仅作者可用）
 
 #### 用户相关接口
+
 - `POST /api/users/register` - 用户注册
 - `POST /api/users/login` - 用户登录
 - `POST /api/users/logout` - 用户退出登录
 
 ### 详细接口设计
+
 查看完整的API接口设计：[database-design.md](database-design.md)（第6节）
 
 ## 云数据库连接说明
 
 ### 配置文件
+
 - 云数据库连接信息存储在 `server/.env` 文件中
 - 该文件已加入 `.gitignore`，防止敏感信息泄露
 - 支持不同环境的配置切换
 
 ### 连接池配置
+
 - 使用mysql2连接池管理数据库连接
 - 连接池大小：10
 - 自动重连机制
@@ -238,20 +254,17 @@ npm run preview
 ## 开发说明
 
 ### 1. 前后端分离开发
+
 - 前端和后端可以独立开发
-- 前端开发时可使用Mock数据
 - 后端开发时可使用API测试工具（如Postman）
 
-### 2. Mock数据
-- 开发环境自动加载Mock数据
-- 生产环境自动连接真实后端API
-- 可通过修改 `src/main.js` 控制Mock数据的加载
+### 2. 环境变量
 
-### 3. 环境变量
 - 前端：通过 `.env` 文件配置（如API地址）
 - 后端：通过 `server/.env` 文件配置（如数据库连接信息）
 
-### 4. 代码规范
+### 3. 代码规范
+
 - 前端：使用Vue 3 Composition API
 - 后端：使用Express + RESTful API设计
 - 统一的代码风格
@@ -312,4 +325,5 @@ npm start
 21. **完善的错误处理**：友好的错误提示，便于调试和维护
 
 ## 版权说明
+
 本项目仅用于期末考核，请勿用于商业用途。
