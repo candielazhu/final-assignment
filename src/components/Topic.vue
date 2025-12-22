@@ -129,9 +129,23 @@ const handleDeleteClick = async () => {
 }
 
 // 生成唯一ID
-const generateId = (text) => {
-    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+const generateId = (text, index) => {
+    const baseId = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    // 添加索引确保ID唯一，避免重复标题导致的ID冲突
+    return `${baseId}-${index}`
 }
+
+// 配置marked选项，确保所有标题都能正确转换
+marked.setOptions({
+    headerIds: false, // 禁用自动生成ID，我们将手动生成
+    mangle: false, // 禁用ID混淆
+    breaks: true, // 允许换行符转换为<br>
+    gfm: true, // 启用GitHub风格的Markdown
+    pedantic: false, // 禁用严格的Markdown规范
+    sanitize: false, // 禁用HTML清理
+    smartLists: true, // 启用智能列表格式化
+    smartypants: false // 禁用智能标点转换
+})
 
 // 将 Markdown 转换为 HTML，并添加ID
 const htmlContent = computed(() => {
@@ -148,10 +162,11 @@ const extractAnchors = () => {
     const headings = markdownRef.value.querySelectorAll('h1, h2, h3, h4, h5, h6')
     const newAnchors = []
 
-    headings.forEach(heading => {
+    headings.forEach((heading, index) => {
         const level = parseInt(heading.tagName[1])
         const text = heading.textContent.trim()
-        const id = generateId(text)
+        // 传递索引确保生成唯一ID
+        const id = generateId(text, index)
 
         // 给标题添加ID
         heading.id = id
@@ -166,25 +181,64 @@ const extractAnchors = () => {
     anchors.value = newAnchors
 }
 
-// 滚动到指定锚点
+// 平滑滚动到指定锚点
 const scrollToAnchor = (id) => {
-    const element = document.getElementById(id)
-    if (element) {
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        })
+    // 使用nextTick确保DOM已经更新
+    nextTick(() => {
+        const element = document.getElementById(id)
+        if (!element || !markdownRef.value) return
+
         activeAnchor.value = id
-    }
+
+        const container = markdownRef.value
+        const targetPosition = element.offsetTop
+        const startPosition = container.scrollTop
+        const distance = targetPosition - startPosition
+        const duration = anchorConfig.value.scrollSpeed
+        let startTime = null
+
+        // 使用requestAnimationFrame实现平滑滚动
+        const animateScroll = (currentTime) => {
+            if (startTime === null) startTime = currentTime
+            const timeElapsed = currentTime - startTime
+            const progress = Math.min(timeElapsed / duration, 1)
+            
+            // 使用缓动函数，使滚动更自然
+            const easeInOutQuad = progress < 0.5 ? 
+                2 * progress * progress : 
+                1 - Math.pow(-2 * progress + 2, 2) / 2
+            
+            container.scrollTop = startPosition + distance * easeInOutQuad
+            
+            if (timeElapsed < duration) {
+                requestAnimationFrame(animateScroll)
+            }
+        }
+
+        requestAnimationFrame(animateScroll)
+    })
 }
+
+// 锚点配置选项
+const anchorConfig = ref({
+    scrollSpeed: 800, // 滚动速度，毫秒
+    triggerThreshold: 0.3, // 触发阈值，视口高度的比例
+    highlightStyle: {
+        color: 'var(--primary-color)',
+        fontWeight: 'bold',
+        backgroundColor: 'var(--bg-secondary)',
+        borderLeft: '3px solid var(--primary-color)'
+    }
+})
 
 // 监听滚动，高亮当前锚点
 const handleScroll = () => {
     if (!markdownRef.value || anchors.value.length === 0) return
 
     // 获取markdown内容容器的滚动位置
-    const markdownRect = markdownRef.value.getBoundingClientRect()
-    const scrollPosition = window.scrollY + window.innerHeight / 3 // 调整滚动位置，使用视口高度的1/3作为判断点
+    const containerScrollTop = markdownRef.value.scrollTop
+    const containerHeight = markdownRef.value.clientHeight
+    const triggerPosition = containerScrollTop + containerHeight * anchorConfig.value.triggerThreshold
 
     let currentActive = ''
 
@@ -193,12 +247,11 @@ const handleScroll = () => {
         const anchor = anchors.value[i]
         const element = document.getElementById(anchor.id)
         if (element) {
-            const elementRect = element.getBoundingClientRect()
-            // 计算元素相对于文档顶部的位置
-            const elementTop = elementRect.top + window.scrollY
+            // 获取元素相对于容器顶部的位置
+            const elementTop = element.offsetTop
 
-            // 当标题进入视口1/3位置时，高亮该锚点
-            if (elementTop <= scrollPosition) {
+            // 当标题进入触发区域时，高亮该锚点
+            if (elementTop <= triggerPosition) {
                 currentActive = anchor.id
                 break
             }
@@ -255,6 +308,13 @@ const updateCommentCount = (count) => {
 watch(htmlContent, () => {
     nextTick(() => {
         extractAnchors()
+        // 确保滚动监听正确添加
+        if (markdownRef.value) {
+            // 先移除可能存在的监听，避免重复添加
+            markdownRef.value.removeEventListener('scroll', handleScroll)
+            // 重新添加滚动监听
+            markdownRef.value.addEventListener('scroll', handleScroll)
+        }
     })
 })
 
@@ -270,12 +330,18 @@ onMounted(() => {
     // 获取文章详情
     fetchArticleDetail()
 
-    window.addEventListener('scroll', handleScroll)
+    // 监听markdown内容容器的滚动事件，而不是window的滚动事件
+    if (markdownRef.value) {
+        markdownRef.value.addEventListener('scroll', handleScroll)
+    }
 })
 
 // 组件卸载前移除滚动监听
 onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll)
+    // 移除markdown内容容器的滚动监听
+    if (markdownRef.value) {
+        markdownRef.value.removeEventListener('scroll', handleScroll)
+    }
 })
 </script>
 
