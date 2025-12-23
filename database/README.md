@@ -146,17 +146,18 @@ SOURCE article_tags.sql;
 - `GET /api/users/me` - 获取当前用户信息
 
 ### 5.2 文章相关接口
-- `GET /api/articles` - 获取文章列表
+- `GET /api/articles` - 获取文章列表（支持草稿置顶）
+- `GET /api/articles/search` - 搜索文章（支持按标题、摘要、作者搜索，支持多种排序方式）
 - `GET /api/articles/:id` - 获取文章详情
-- `POST /api/articles` - 创建文章
+- `POST /api/articles` - 创建文章（支持草稿和发布）
 - `PUT /api/articles/:id` - 更新文章
 - `DELETE /api/articles/:id` - 删除文章
 
 ### 5.3 评论相关接口
-- `GET /api/articles/:id/comments` - 获取文章评论
-- `POST /api/articles/:id/comments` - 添加评论
-- `PUT /api/comments/:id` - 更新评论
-- `DELETE /api/comments/:id` - 删除评论
+- `GET /api/comments?article_id=:id` - 获取文章评论列表（支持分页）
+- `POST /api/comments` - 添加文章评论或回复
+- `PUT /api/comments/:id` - 编辑评论（仅作者可用）
+- `DELETE /api/comments/:id` - 删除评论（仅作者可用）
 
 ### 5.4 分类和标签接口
 - `GET /api/categories` - 获取分类列表
