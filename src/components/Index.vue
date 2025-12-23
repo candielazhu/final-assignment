@@ -1,5 +1,6 @@
 <template>
     <BG  style="z-index: -1;"/>
+    <Snowfall />
     <div class="index-container">
         <Header 
             :user-info="userInfo"
@@ -22,6 +23,7 @@ import { useRouter } from 'vue-router'
 import Aside from './Aside.vue'
 import Header from './Header.vue'
 import BG from './bg/Background_animation.vue'
+import Snowfall from './bg/Snowfall.vue'
 const router = useRouter()
 
 // 全局状态
