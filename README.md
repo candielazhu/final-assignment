@@ -238,8 +238,6 @@ npm run preview
 
 ### 详细接口设计
 
-查看完整的API接口设计：[database-design.md](database-design.md)（第6节）
-
 ## 云数据库连接说明
 
 ### 配置文件
