@@ -106,11 +106,13 @@ async function createComment(req, res) {
 
     const result = await executeQuery(sql, [article_id, user_id, content.trim(), parent_id || null]);
 
-    // 如果是回复评论，更新父评论的回复数
-    if (parent_id) {
-      // 这里可以根据实际需求更新文章的评论数
-      // 例如：UPDATE articles SET comment_count = comment_count + 1 WHERE id = ?
-    }
+    // 更新文章的评论数
+    const updateCommentCountSql = `
+      UPDATE articles 
+      SET comment_count = comment_count + 1 
+      WHERE id = ?
+    `;
+    await executeQuery(updateCommentCountSql, [article_id]);
 
     res.json({
       code: 200,
@@ -206,21 +208,50 @@ async function deleteComment(req, res) {
       });
     }
 
-    // 删除评论（级联删除子评论）
-    const deleteSql = `
-      DELETE FROM comments 
-      WHERE id = ? OR parent_id = ?
+    // 获取评论所属的文章ID
+    const getArticleIdSql = `
+      SELECT article_id FROM comments 
+      WHERE id = ?
     `;
+    const articleIdResult = await executeQuery(getArticleIdSql, [id]);
+    
+    if (articleIdResult.length > 0) {
+      const articleId = articleIdResult[0].article_id;
+      
+      // 删除评论（级联删除子评论）
+      const deleteSql = `
+        DELETE FROM comments 
+        WHERE id = ? OR parent_id = ?
+      `;
 
-    const result = await executeQuery(deleteSql, [id, id]);
-
-    res.json({
-      code: 200,
-      message: '评论删除成功',
-      data: {
-        deletedCount: result.affectedRows
+      const result = await executeQuery(deleteSql, [id, id]);
+      
+      // 更新文章的评论数，减去删除的评论数量
+      if (result.affectedRows > 0) {
+        const updateCommentCountSql = `
+          UPDATE articles 
+          SET comment_count = comment_count - ? 
+          WHERE id = ?
+        `;
+        await executeQuery(updateCommentCountSql, [result.affectedRows, articleId]);
       }
-    });
+
+      res.json({
+        code: 200,
+        message: '评论删除成功',
+        data: {
+          deletedCount: result.affectedRows
+        }
+      });
+    } else {
+      res.json({
+        code: 200,
+        message: '评论删除成功',
+        data: {
+          deletedCount: 0
+        }
+      });
+    }
   } catch (error) {
     res.status(500).json({
       code: 500,

@@ -15,7 +15,7 @@
                             <span>{{ formatDate(article.created_at || article.createTime) }}</span>
                             <div>
                                 <span>{{ article.reading || article.view_count || article.views || 0 }} 浏览</span>
-                                <span>{{ article.comment_count || article.commentCount || 0 }} 评论</span>
+                                <span>{{ Number(article.comment_count || article.commentCount || 0) }} 评论</span>
                             </div>
                         </div>
                     </div>
