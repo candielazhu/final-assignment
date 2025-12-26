@@ -522,25 +522,27 @@ onMounted(() => {
 
 <style scoped>
 .account-container {
-  padding: 20px;
+  padding: var(--spacing-xl);
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 80vh;
+  transition: all var(--transition-normal);
 }
 
 .account-header {
   background-color: var(--bg-tertiary);
-  padding: 30px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-xl);
   border: 1px solid var(--border-color);
   text-align: left;
+  transition: all var(--transition-normal);
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--spacing-xl);
 }
 
 .user-info {
@@ -548,28 +550,30 @@ onMounted(() => {
 }
 
 .user-info h2 {
-  margin: 0 0 10px 0;
+  margin: 0 0 var(--spacing-sm) 0;
   font-size: 24px;
   color: var(--text-primary);
+  font-weight: 600;
 }
 
 .user-role {
   font-size: 16px;
   color: var(--text-secondary);
-  margin: 5px 0;
+  margin: var(--spacing-xs) 0;
 }
 
 .join-date {
   font-size: 14px;
-  color: var(--text-tertiary);
-  margin: 5px 0;
+  color: var(--text-muted);
+  margin: var(--spacing-xs) 0;
 }
 
 .account-content {
   background-color: var(--bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   border: 1px solid var(--border-color);
   overflow: hidden;
+  transition: all var(--transition-normal);
 }
 
 .account-tabs {
@@ -578,6 +582,8 @@ onMounted(() => {
 
 :deep(.el-tabs__item) {
   color: var(--text-primary);
+  transition: all var(--transition-normal);
+  margin-left: var(--spacing-xl);
 }
 
 :deep(.el-tabs__item.is-active) {
@@ -585,7 +591,7 @@ onMounted(() => {
 }
 
 :deep(.el-tab-pane) {
-  padding: 20px;
+  padding: var(--spacing-xl);
 }
 
 .profile-form {
@@ -594,11 +600,11 @@ onMounted(() => {
 
 .avatar-uploader {
   border: 1px dashed var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--border-radius-sm);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: var(--el-transition-duration-fast);
+  transition: all var(--transition-normal);
   width: 100px;
   height: 100px;
 }
@@ -609,7 +615,7 @@ onMounted(() => {
 
 .avatar-uploader-icon {
   font-size: 28px;
-  color: #8c939d;
+  color: var(--text-muted);
   width: 100px;
   height: 100px;
   text-align: center;
@@ -622,40 +628,44 @@ onMounted(() => {
   width: 100px;
   height: 100px;
   display: block;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition-normal);
 }
 
 .articles-actions {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-xl);
   text-align: left;
 }
 
 .articles-table, .comments-table {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .pagination-container {
   text-align: center;
-  margin-top: 20px;
+  margin-top: var(--spacing-xl);
 }
 
 .settings-form {
   max-width: 500px;
-  margin-bottom: 30px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .danger-zone {
-  padding-top: 20px;
+  padding-top: var(--spacing-xl);
   border-top: 1px solid var(--border-color);
 }
 
 .danger-zone h3 {
-  margin-bottom: 15px;
+  margin-bottom: var(--spacing-md);
   color: var(--text-primary);
+  font-weight: 500;
 }
 
 :deep(.el-table) {
   background-color: var(--bg-secondary);
   border-color: var(--border-color);
+  transition: all var(--transition-normal);
 }
 
 :deep(.el-table th) {
@@ -669,11 +679,17 @@ onMounted(() => {
   color: var(--text-primary);
 }
 
+:deep(.el-table tr:hover > td) {
+  background-color: var(--bg-hover);
+}
+
 :deep(.el-input__inner),
 :deep(.el-textarea__inner) {
   background-color: var(--bg-secondary);
   border-color: var(--border-color);
   color: var(--text-primary);
+  transition: all var(--transition-normal);
+  border-radius: var(--border-radius-sm);
 }
 
 :deep(.el-input__inner:focus),
@@ -684,5 +700,51 @@ onMounted(() => {
 
 :deep(.el-form-item__label) {
   color: var(--text-primary);
+}
+
+:deep(.el-upload-dragger) {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  transition: all var(--transition-normal);
+  border-radius: var(--border-radius-md);
+}
+
+:deep(.el-upload-dragger:hover) {
+  border-color: var(--primary-color);
+}
+
+:deep(.el-pagination button) {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  transition: all var(--transition-normal);
+}
+
+:deep(.el-pagination button:hover) {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+:deep(.el-pagination .el-pager li) {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all var(--transition-normal);
+}
+
+:deep(.el-pagination .el-pager li:hover) {
+  color: var(--primary-color);
+}
+
+:deep(.el-pagination .el-pager li.is-active) {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: var(--border-color);
+}
+
+:deep(.el-divider) {
+  border-color: var(--border-color);
 }
 </style>
