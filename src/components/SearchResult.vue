@@ -160,7 +160,7 @@ const highlightKeywords = (text, keywords) => {
 const formatDate = (dateString) => {
     try {
         const date = new Date(dateString)
-        return isNaN(date.getTime()) ? '' : date.toLocaleString()
+        return isNaN(date.getTime()) ? '' : date.toLocaleDateString()
     } catch (error) {
         console.error('格式化日期失败:', error)
         return ''

@@ -57,7 +57,7 @@ const hasMore = ref(true)
 const formatDate = (dateString) => {
     if (!dateString) return ''
     const date = new Date(dateString)
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
+    return date.toLocaleDateString()
 }
 
 // 获取文章数据
