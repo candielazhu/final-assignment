@@ -26,6 +26,7 @@ html, body {
   --bg-primary: #fffbf060;
   --bg-secondary: #fff2df;
   --bg-tertiary: #f2ecde;
+  --bg-login: #fffbf060;
   
   /* 文本色 */
   --text-primary: #213547;
@@ -58,6 +59,7 @@ html, body {
   --bg-primary: #1a1a1a60;
   --bg-secondary: #242424;
   --bg-tertiary: #2c2c2c;
+  --bg-login: #c2ccd0;
   
   /* 文本色 */
   --text-primary: #ffffff;
