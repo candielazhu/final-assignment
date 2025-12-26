@@ -5,32 +5,17 @@
                 <h2>登录</h2>
                 <form @submit.prevent="handleLogin">
                     <div class="login-inputBox">
-                        <input 
-                            type="text" 
-                            placeholder="用户名" 
-                            v-model="loginForm.username" 
-                            :class="{ 'error': errors.username }"
-                            @keyup.enter="handleLogin"
-                        />
+                        <input type="text" placeholder="用户名" v-model="loginForm.username"
+                            :class="{ 'error': errors.username }" @keyup.enter="handleLogin" />
                         <div v-if="errors.username" class="error-message">{{ errors.username }}</div>
                     </div>
                     <div class="login-inputBox">
-                        <input 
-                            type="password" 
-                            placeholder="密码" 
-                            v-model="loginForm.password" 
-                            :class="{ 'error': errors.password }"
-                            @keyup.enter="handleLogin"
-                        />
+                        <input type="password" placeholder="密码" v-model="loginForm.password"
+                            :class="{ 'error': errors.password }" @keyup.enter="handleLogin" />
                         <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
                     </div>
                     <div class="login-inputBox">
-                        <input 
-                            type="submit" 
-                            value="登录" 
-                            :disabled="loading"
-                            class="login-btn"
-                        />
+                        <input type="submit" value="登录" :disabled="loading" class="login-btn" />
                     </div>
                 </form>
             </div>
@@ -108,10 +93,10 @@ const handleLogin = async () => {
             // 登录成功，设置登录状态
             localStorage.setItem('isLoggedIn', 'true')
             setCookie('isLoggedIn', 'true', 7)
-            
+
             // 保存用户信息
             localStorage.setItem('userInfo', JSON.stringify(response.data.data))
-            
+
             ElMessage.success('登录成功！')
             router.push('/') // 跳转到首页
         } else {
@@ -119,7 +104,7 @@ const handleLogin = async () => {
         }
     } catch (error) {
         console.error('登录错误:', error)
-        
+
         if (error.response?.data?.code === 401) {
             ElMessage.error('用户名或密码错误')
         } else {
@@ -146,7 +131,10 @@ const setCookie = (name, value, days) => {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: #fff2df;
+    background-color: var(--bg-login);
+
+    /* background: #FFF2DF; */
+    /* #454545 */
 }
 
 /* 大水珠的外形 */
