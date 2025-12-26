@@ -62,6 +62,11 @@ const formatDate = (dateString) => {
 
 // 获取文章数据
 const getData = async function () {
+    // 重置分页参数
+    page.value = 1
+    hasMore.value = true
+    loading.value = true
+    
     // 获取当前登录用户信息
     const userInfoStr = localStorage.getItem('userInfo')
     const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {}
@@ -74,7 +79,7 @@ const getData = async function () {
                 user_id: userInfo.id || null
             }
         })
-        let articleList = res.data.data
+        let articleList = res.data.data || []
         console.log('获取到的文章数据:', articleList)
 
         // 排序：草稿文章置顶，已发布文章按创建时间倒序
@@ -90,8 +95,13 @@ const getData = async function () {
         })
 
         articles.value.list = articleList
+        // 如果初始加载的文章数量小于pageSize，说明没有更多文章
+        hasMore.value = articleList.length >= pageSize.value
     } catch (err) {
         console.error('获取文章列表失败:', err)
+        articles.value.list = []
+    } finally {
+        loading.value = false
     }
 }
 
@@ -101,9 +111,28 @@ const fetchArticles = async () => {
 
     loading.value = true
     try {
-        // 临时模拟，后期删除
-        articles.value.list = []
-        hasMore.value = false
+        // 获取当前登录用户信息
+        const userInfoStr = localStorage.getItem('userInfo')
+        const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {}
+
+        const res = await request({
+            url: '/articles',
+            method: 'get',
+            params: {
+                user_id: userInfo.id || null,
+                page: page.value,
+                pageSize: pageSize.value
+            }
+        })
+        
+        let newArticles = res.data.data || []
+        
+        if (newArticles.length === 0) {
+            hasMore.value = false
+        } else {
+            // 合并新文章到现有列表
+            articles.value.list = [...articles.value.list, ...newArticles]
+        }
     } catch (error) {
         console.error('加载文章失败:', error)
     } finally {
