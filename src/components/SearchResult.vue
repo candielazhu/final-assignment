@@ -4,31 +4,16 @@
         <div class="search-filters">
             <el-form :inline="true" :model="searchForm" class="search-form">
                 <el-form-item label="标题">
-                    <el-input 
-                        v-model="searchForm.title" 
-                        placeholder="输入标题关键词" 
-                        clearable
-                        style="width: 200px"
-                        @keyup.enter="handleSearch"
-                    />
+                    <el-input v-model="searchForm.title" placeholder="输入标题关键词" clearable style="width: 200px"
+                        @keyup.enter="handleSearch" />
                 </el-form-item>
-                <el-form-item label="副标题">       
-                    <el-input 
-                        v-model="searchForm.subtitle" 
-                        placeholder="输入副标题关键词" 
-                        clearable
-                        style="width: 200px"
-                        @keyup.enter="handleSearch"
-                    />
+                <el-form-item label="副标题">
+                    <el-input v-model="searchForm.subtitle" placeholder="输入副标题关键词" clearable style="width: 200px"
+                        @keyup.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item label="用户">
-                    <el-input 
-                        v-model="searchForm.username" 
-                        placeholder="输入用户名或ID" 
-                        clearable
-                        style="width: 150px"
-                        @keyup.enter="handleSearch"
-                    />
+                    <el-input v-model="searchForm.username" placeholder="输入用户名或ID" clearable style="width: 150px"
+                        @keyup.enter="handleSearch" />
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="handleSearch" :loading="isSearching">搜索</el-button>
@@ -44,7 +29,8 @@
             </div>
             <div class="sort-options">
                 <span>排序方式：</span>
-                <el-select v-model="sortBy" placeholder="请选择" size="small" @change="handleSortChange" style="width: 90px;">
+                <el-select v-model="sortBy" placeholder="请选择" size="small" @change="handleSortChange"
+                    style="width: 90px;">
                     <el-option label="相关度" value="relevance" />
                     <el-option label="最新发布" value="createdAt" />
                     <el-option label="浏览量" value="views" />
@@ -53,32 +39,33 @@
         </div>
 
         <!-- 搜索结果列表 -->
-        <div class="result-list" v-if="results.length > 0 && !isSearching">
-            <div 
-                v-for="result in results" 
-                :key="result.id" 
-                class="result-item"
-                @click="goToArticle(result.id)"
-            >
-                <div class="result-title">
-                    <h3 v-html="highlightKeywords(result.title, searchKeywords)"></h3>
+        <div v-if="results.length > 0 && !isSearching">
+            <el-scrollbar class="result-scrollbar">
+                <div class="result-list">
+                    <div v-for="result in results" :key="result.id" class="result-item" @click="goToArticle(result.id)">
+                        <div class="result-title">
+                            <h3 v-html="highlightKeywords(result.title, searchKeywords)"></h3>
+                        </div>
+                        <div class="result-subtitle" v-if="result.subtitle">
+                            <p v-html="highlightKeywords(result.subtitle, searchKeywords)"></p>
+                        </div>
+                        <div class="result-meta">
+                            <span class="author">{{ result.username }}</span>
+                            <span class="time">{{ formatDate(result.createdAt) }}</span>
+                            <span class="views">{{ result.views || 0 }} 浏览</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="result-subtitle" v-if="result.subtitle">
-                    <p v-html="highlightKeywords(result.subtitle, searchKeywords)"></p>
-                </div>
-                <div class="result-meta">
-                    <span class="author">{{ result.username }}</span>
-                    <span class="time">{{ formatDate(result.createdAt) }}</span>
-                    <span class="views">{{ result.views || 0 }} 浏览</span>
-                </div>
-            </div>
+            </el-scrollbar>
         </div>
 
         <!-- 搜索中状态 -->
         <div class="no-results" v-else-if="isSearching">
             <el-empty description="正在搜索...">
                 <template #image>
-                    <el-icon class="is-loading"><Loading /></el-icon>
+                    <el-icon class="is-loading">
+                        <Loading />
+                    </el-icon>
                 </template>
             </el-empty>
         </div>
@@ -87,20 +74,17 @@
         <div class="no-results" v-else-if="totalResults === 0 && hasSearched">
             <el-empty>
                 <template #image>
-                    <el-icon><Search /></el-icon>
+                    <el-icon>
+                        <Search />
+                    </el-icon>
                 </template>
                 <template #description>
                     <div>
                         <p>未找到相关结果</p>
                         <div class="suggestions" v-if="suggestions.length > 0">
                             <p>您可能想要查找：</p>
-                            <el-tag 
-                                v-for="suggestion in suggestions" 
-                                :key="suggestion" 
-                                type="info" 
-                                @click="handleSuggestionClick(suggestion)"
-                                style="margin: 2px; cursor: pointer;"
-                            >
+                            <el-tag v-for="suggestion in suggestions" :key="suggestion" type="info"
+                                @click="handleSuggestionClick(suggestion)" style="margin: 2px; cursor: pointer;">
                                 {{ suggestion }}
                             </el-tag>
                         </div>
@@ -116,14 +100,8 @@
                 <el-button link size="small" @click="clearHistory">清空</el-button>
             </div>
             <div class="history-tags">
-                <el-tag 
-                    v-for="(item, index) in searchHistory" 
-                    :key="index" 
-                    @click="handleHistoryClick(item)"
-                    closable
-                    @close="removeHistoryItem(index)"
-                    style="cursor: pointer; margin: 4px;"
-                >
+                <el-tag v-for="(item, index) in searchHistory" :key="index" @click="handleHistoryClick(item)" closable
+                    @close="removeHistoryItem(index)" style="cursor: pointer; margin: 4px;">
                     {{ item }}
                 </el-tag>
             </div>
@@ -203,33 +181,33 @@ const goToArticle = (articleId) => {
 const handleSearch = async () => {
     console.log('====== 前端搜索开始 ======')
     console.log('搜索表单:', searchForm.value)
-    
+
     // 检查是否有搜索条件
     const hasSearchTerm = searchForm.value.title || searchForm.value.subtitle || searchForm.value.username
     if (!hasSearchTerm) {
         ElMessage.warning('请输入至少一个搜索条件')
         return
     }
-    
+
     isSearching.value = true
     hasSearched.value = true
     showHistory.value = false
-    
+
     // 构建搜索关键词
     const keywords = [
         searchForm.value.title,
         searchForm.value.subtitle,
         searchForm.value.username
     ].filter(item => item).join(' ')
-    
+
     searchKeywords.value = keywords
     console.log('搜索关键词:', keywords)
-    
+
     // 保存搜索历史
     if (keywords) {
         addToSearchHistory(keywords)
     }
-    
+
     try {
         // 获取当前用户ID
         let currentUserId = null
@@ -242,33 +220,33 @@ const handleSearch = async () => {
         } catch (parseError) {
             console.error('解析用户信息失败:', parseError)
         }
-        
+
         console.log('当前用户ID:', currentUserId)
-        
+
         // 构建请求参数
         const params = {
             sortBy: sortBy.value
         }
-        
+
         if (searchForm.value.title) params.title = searchForm.value.title
         if (searchForm.value.subtitle) params.subtitle = searchForm.value.subtitle
         if (searchForm.value.username) params.username = searchForm.value.username
         if (currentUserId) params.user_id = currentUserId
-        
+
         console.log('请求参数:', params)
-        
+
         // 调用搜索API
         const response = await request.get('/articles/search', { params })
-        
+
         console.log('搜索响应:', response.data)
-        
+
         // 确保results始终是数组
         if (response.data && response.data.code === 200) {
             results.value = Array.isArray(response.data.data) ? response.data.data : []
             totalResults.value = typeof response.data.total === 'number' ? response.data.total : 0
-            
+
             console.log('搜索结果数量:', totalResults.value)
-            
+
             if (totalResults.value === 0) {
                 ElMessage.info('未找到匹配的结果')
             } else {
@@ -287,7 +265,7 @@ const handleSearch = async () => {
         console.error('错误详情:', error.response?.data)
         console.error('错误堆栈:', error.stack)
         console.error('====== 错误结束 ======')
-        
+
         results.value = []
         totalResults.value = 0
         ElMessage.error(error.response?.data?.message || '搜索失败，请稍后重试')
@@ -392,7 +370,7 @@ const handleSuggestionClick = (suggestion) => {
 onMounted(() => {
     try {
         searchHistory.value = getSearchHistory()
-        
+
         // 从URL参数获取搜索关键词
         const keyword = route.query.keyword
         if (keyword) {
@@ -452,8 +430,13 @@ onMounted(() => {
     gap: 10px;
 }
 
-.result-list {
+.result-scrollbar {
+    height: 75vh;
     margin-bottom: 20px;
+}
+
+.result-list {
+    padding-right: 8px;
 }
 
 .result-item {
@@ -539,23 +522,23 @@ onMounted(() => {
     .search-result-container {
         padding: 10px;
     }
-    
+
     .search-form {
         flex-direction: column;
         align-items: stretch;
         gap: 12px;
     }
-    
+
     .result-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
-    
+
     .sort-options {
         width: 100%;
     }
-    
+
     .result-meta {
         flex-direction: column;
         gap: 8px;

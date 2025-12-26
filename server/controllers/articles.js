@@ -76,13 +76,18 @@ async function getArticleById(req, res) {
     const articles = await executeQuery(sql, [id, currentUserId || 0]);
 
     if (articles.length === 0) {
-      return res.status(404).json({
-        code: 404,
-        message: '文章不存在'
+      return res.status(404).json({ 
+        code: 404, 
+        message: '文章不存在' 
       });
     }
 
     const articleDetail = articles[0];
+    
+    // 增加浏览量
+    await executeQuery('UPDATE articles SET view_count = view_count + 1 WHERE id = ?', [id]);
+    // 更新返回结果中的浏览量
+    articleDetail.reading += 1;
 
     // 读取对应id的markdown文件内容
     const mdFilePath = path.join(__dirname, '../../src/services/articles', `${id}.md`);

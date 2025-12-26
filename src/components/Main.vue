@@ -2,7 +2,8 @@
     <div class="main">
         <el-scrollbar height="100%" @end-reached="loadMore">
             <div v-if="articles.list.length > 0">
-                <div v-for="article in articles.list" :key="article.id" class="article-item" @click="goToTopic(article)">
+                <div v-for="article in articles.list" :key="article.id" class="article-item"
+                    @click="goToTopic(article)">
                     <div class="article-main">
                         <div class="article-title-row">
                             <h3>{{ article.title }}</h3>
@@ -12,7 +13,10 @@
                         <div class="article-meta">
                             <span>{{ article.author_name || article.author }}</span>
                             <span>{{ formatDate(article.created_at || article.createTime) }}</span>
-                            <span>{{ (article.comment_count || article.commentCount) }} 评论</span>
+                            <div>
+                                <span>{{ article.reading || article.view_count || article.views || 0 }} 浏览</span>
+                                <span>{{ article.comment_count || article.commentCount || 0 }} 评论</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -57,11 +61,11 @@ const formatDate = (dateString) => {
 }
 
 // 获取文章数据
-const getData = async function() {
+const getData = async function () {
     // 获取当前登录用户信息
     const userInfoStr = localStorage.getItem('userInfo')
     const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {}
-    
+
     try {
         const res = await request({
             url: '/articles',
@@ -72,19 +76,19 @@ const getData = async function() {
         })
         let articleList = res.data.data
         console.log('获取到的文章数据:', articleList)
-        
+
         // 排序：草稿文章置顶，已发布文章按创建时间倒序
         articleList.sort((a, b) => {
             // 先按状态排序，草稿排在前面
             if (a.status === 'draft' && b.status !== 'draft') return -1
             if (a.status !== 'draft' && b.status === 'draft') return 1
-            
+
             // 状态相同，按创建时间倒序
             const dateA = new Date(a.created_at || a.createTime)
             const dateB = new Date(b.created_at || b.createTime)
             return dateB - dateA
         })
-        
+
         articles.value.list = articleList
     } catch (err) {
         console.error('获取文章列表失败:', err)

@@ -20,6 +20,9 @@ dist-ssr
 # Services articles
 src/services/articles/
 
+# README
+src/README/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
