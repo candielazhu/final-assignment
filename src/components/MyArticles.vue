@@ -19,46 +19,33 @@
         </el-select>
       </div>
     </div>
-    
+
     <!-- 文章统计 -->
     <div class="articles-stats" style="margin-bottom: var(--spacing-xl); display: flex; gap: var(--spacing-xl);">
-      <el-statistic 
-        title="已发布文章" 
-        :value="articleStats.published" 
-        :precision="0"
-      >
+      <el-statistic title="已发布文章" :value="articleStats.published" :precision="0">
         <template #suffix>
           <el-tag type="success" size="small">篇</el-tag>
         </template>
       </el-statistic>
-      <el-statistic 
-        title="草稿文章" 
-        :value="articleStats.draft" 
-        :precision="0"
-      >
+      <el-statistic title="草稿文章" :value="articleStats.draft" :precision="0">
         <template #suffix>
           <el-tag type="info" size="small">篇</el-tag>
         </template>
       </el-statistic>
     </div>
-    
+
     <!-- 加载状态 -->
     <el-skeleton :rows="5" animated v-if="isLoadingArticles" style="margin: var(--spacing-lg) 0;" />
-    
+
     <!-- 非加载状态 -->
     <template v-else>
       <!-- 文章列表 -->
-      <el-table 
-        v-if="totalArticles > 0" 
-        :data="userArticles" 
-        style="width: 100%" 
-        class="articles-table"
-        v-loading="isLoadingArticles"
-      >
+      <el-table v-if="totalArticles > 0" :data="userArticles" style="width: 100%" class="articles-table"
+        v-loading="isLoadingArticles">
         <el-table-column prop="title" label="标题" width="200" show-overflow-tooltip />
         <el-table-column prop="summary" label="摘要" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
+          <template #default="{ row }" style="background-color: black;">
             <el-tag :type="row.status === 'published' ? 'success' : 'info'">
               {{ row.status === 'published' ? '已发布' : '草稿' }}
             </el-tag>
@@ -75,12 +62,8 @@
           <template #default="{ row }">
             <el-button size="small" @click="viewArticle(row.id)">查看</el-button>
             <el-button size="small" type="primary" @click="editArticle(row.id)">编辑</el-button>
-            <el-popconfirm
-              title="确定要删除这篇文章吗？"
-              confirm-button-text="确定"
-              cancel-button-text="取消"
-              @confirm="deleteArticle(row.id)"
-            >
+            <el-popconfirm title="确定要删除这篇文章吗？" confirm-button-text="确定" cancel-button-text="取消"
+              @confirm="deleteArticle(row.id)">
               <template #reference>
                 <el-button size="small" type="danger">删除</el-button>
               </template>
@@ -88,11 +71,11 @@
           </template>
         </el-table-column>
       </el-table>
-      
+
       <!-- 空状态 -->
       <div v-else class="empty-state">
-         <el-empty description="暂无文章" />
-       </div>
+        <el-empty description="暂无文章" />
+      </div>
     </template>
   </div>
 </template>
@@ -119,7 +102,7 @@ const getCurrentUserId = () => {
   if (props.userId) {
     return props.userId
   }
-  
+
   // 否则从localStorage中获取当前用户ID
   try {
     const userInfoStr = localStorage.getItem('userInfo')
@@ -149,7 +132,7 @@ const articleStats = reactive({ // 文章统计
 const fetchUserArticles = async () => {
   try {
     isLoadingArticles.value = true
-    
+
     // 使用现有的搜索API端点来获取用户文章
     const params = {
       user_id: getCurrentUserId(),
@@ -157,23 +140,23 @@ const fetchUserArticles = async () => {
       sort_by: articleSortBy.value,
       sort_order: articleSortOrder.value
     }
-    
+
     // 添加状态筛选
     if (articleStatusFilter.value !== 'all') {
       params.status = articleStatusFilter.value
     }
-    
+
     const response = await request({
       url: '/articles',
       method: 'get',
       params: params
     })
-    
+
     if (response.data.code === 200) {
       // API返回的数据结构是response.data.data和response.data.total
       userArticles.value = response.data.data || []
       totalArticles.value = response.data.total || 0
-      
+
       // 前端计算统计信息
       articleStats.published = userArticles.value.filter(article => article.status === 'published').length
       articleStats.draft = userArticles.value.filter(article => article.status === 'draft').length
@@ -217,7 +200,7 @@ const deleteArticle = async (id) => {
       url: `/articles/${id}`,
       method: 'delete'
     })
-    
+
     if (response.data.code === 200) {
       ElMessage.success('文章删除成功')
       fetchUserArticles() // 重新获取文章列表
@@ -255,8 +238,8 @@ onMounted(() => {
 .articles-table {
   margin-bottom: var(--spacing-xl);
   height: 46vh;
+  --el-table-tr-bg-color: var(--bg-primary);
 }
-
 .empty-state {
   display: flex;
   justify-content: center;

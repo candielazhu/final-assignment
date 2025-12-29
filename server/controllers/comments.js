@@ -261,9 +261,70 @@ async function deleteComment(req, res) {
   }
 }
 
+// 获取用户评论列表
+async function getUserComments(req, res) {
+  try {
+    const userId = req.query.user_id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // 验证用户ID
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({
+        code: 400,
+        message: '缺少用户ID或用户ID无效'
+      });
+    }
+    
+    // 查询用户评论
+    const commentsSql = `
+      SELECT 
+        c.id, c.content, c.article_id, c.created_at, 
+        a.title as article_title
+      FROM comments c
+      LEFT JOIN articles a ON c.article_id = a.id
+      WHERE c.user_id = ${userId}
+      ORDER BY c.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const comments = await executeQuery(commentsSql);
+
+    // 获取总评论数
+    const countSql = `
+      SELECT COUNT(*) as total 
+      FROM comments 
+      WHERE user_id = ${userId}
+    `;
+    const countResult = await executeQuery(countSql);
+    const total = countResult[0].total;
+
+    res.json({
+      code: 200,
+      message: '获取用户评论列表成功',
+      data: {
+        list: comments,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('获取用户评论列表失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取用户评论列表失败',
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   getComments,
   createComment,
   updateComment,
-  deleteComment
+  deleteComment,
+  getUserComments
 };

@@ -5,6 +5,9 @@ const commentsController = require('../controllers/comments');
 // 获取评论列表
 router.get('/', commentsController.getComments);
 
+// 获取用户评论列表
+router.get('/user', commentsController.getUserComments);
+
 // 创建评论
 router.post('/', commentsController.createComment);
 

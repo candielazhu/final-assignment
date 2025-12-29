@@ -68,17 +68,6 @@
                 </template>
               </el-table-column>
             </el-table>
-            <div class="pagination-container" v-if="totalComments > 0">
-              <el-pagination
-                v-model:current-page="commentCurrentPage"
-                v-model:page-size="commentPageSize"
-                :page-sizes="[5, 10, 20, 50]"
-                layout="total, sizes, prev, pager, next, jumper"
-                :total="totalComments"
-                @size-change="handleCommentSizeChange"
-                @current-change="handleCommentCurrentChange"
-              />
-            </div>
           </div>
         </el-tab-pane>
 
@@ -170,8 +159,6 @@ const settingsFormRef = ref(null)
 // 评论数据
 const userComments = ref([])
 const totalComments = ref(0)
-const commentCurrentPage = ref(1)
-const commentPageSize = ref(10)
 
 // 获取当前用户信息
 const fetchUserInfo = async () => {
@@ -201,20 +188,13 @@ const fetchUserInfo = async () => {
 // 获取用户评论
 const fetchUserComments = async () => {
   try {
-    // 注意：当前API没有提供获取用户评论的端点，暂时返回空数组
-    // 后续可以根据实际API情况调整
-    userComments.value = []
-    totalComments.value = 0
+    if (!userInfo.id) return
     
-    // 如果后续有了正确的API端点，可以使用以下代码
-    /*
     const response = await request({
-      url: '/正确的评论API端点',
+      url: '/comments/user',
       method: 'get',
       params: {
-        user_id: userInfo.id,
-        page: commentCurrentPage.value,
-        pageSize: commentPageSize.value
+        user_id: userInfo.id
       }
     })
     
@@ -223,8 +203,9 @@ const fetchUserComments = async () => {
       totalComments.value = response.data.data.total || 0
     } else {
       ElMessage.error('获取评论列表失败')
+      userComments.value = []
+      totalComments.value = 0
     }
-    */
   } catch (error) {
     console.error('获取评论列表失败:', error)
     // 静默处理，不影响主功能
@@ -350,19 +331,9 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString()
 }
 
-
-
-// 处理评论分页大小变化
-const handleCommentSizeChange = (val) => {
-  commentPageSize.value = val
-  commentCurrentPage.value = 1
-  fetchUserComments()
-}
-
-// 处理评论当前页变化
-const handleCommentCurrentChange = (val) => {
-  commentCurrentPage.value = val
-  fetchUserComments()
+// 查看文章
+const viewArticle = (articleId) => {
+  router.push(`/topic/${articleId}`)
 }
 
 // 处理账户删除
@@ -531,11 +502,7 @@ onMounted(() => {
 .articles-table, .comments-table {
   margin-bottom: var(--spacing-xl);
   height: 46vh;
-}
-
-.pagination-container {
-  text-align: center;
-  margin-top: var(--spacing-xl);
+  --el-table-tr-bg-color: var(--bg-primary);
 }
 
 .settings-form {
@@ -603,33 +570,6 @@ onMounted(() => {
 
 :deep(.el-upload-dragger:hover) {
   border-color: var(--primary-color);
-}
-
-:deep(.el-pagination button) {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-color);
-  color: var(--text-primary);
-  transition: all var(--transition-normal);
-}
-
-:deep(.el-pagination button:hover) {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-:deep(.el-pagination .el-pager li) {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  transition: all var(--transition-normal);
-}
-
-:deep(.el-pagination .el-pager li:hover) {
-  color: var(--primary-color);
-}
-
-:deep(.el-pagination .el-pager li.is-active) {
-  background-color: var(--primary-color);
-  color: white;
 }
 
 :deep(.el-tabs__nav-wrap::after) {
