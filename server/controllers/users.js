@@ -211,9 +211,55 @@ async function updateUser(req, res) {
   }
 }
 
+// 更新用户密码
+async function updatePassword(req, res) {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+    
+    // 验证输入
+    if (!newPassword) {
+      return res.status(400).json({
+        code: 400,
+        message: '新密码不能为空'
+      });
+    }
+    
+    // 验证密码长度
+    if (newPassword.length < 6 || newPassword.length > 20) {
+      return res.status(400).json({
+        code: 400,
+        message: '密码长度在 6 到 20 个字符'
+      });
+    }
+    
+    // 更新密码
+    const updateSql = `
+      UPDATE users 
+      SET PASSWORD = ? 
+      WHERE id = ?
+    `;
+    
+    await executeQuery(updateSql, [newPassword, id]);
+    
+    res.json({
+      code: 200,
+      message: '密码更新成功'
+    });
+  } catch (error) {
+    console.error('更新密码失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '更新密码失败，请稍后重试',
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   registerUser,
   loginUser,
   getUserInfo,
-  updateUser
+  updateUser,
+  updatePassword
 };

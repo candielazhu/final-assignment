@@ -5,10 +5,17 @@
         <el-avatar :size="100" :src="userInfo.avatar" />
         <div class="user-info">
           <h2>{{ userInfo.username }}</h2>
-          <p class="user-role">{{ userInfo.role === 'admin' ? '管理员' : '普通用户' }}</p>
-          <p class="join-date">加入时间：{{ formatDate(userInfo.createTime || '2023-01-01') }}</p>
-          <p>手机号：{{  }}</p>
-          <p>简介：{{  }}</p>
+          <div style="display: flex;flex-direction: row;">
+            <div style="min-width: 200px;">
+              <p class="user-role">{{ userInfo.role === 'admin' ? '管理员' : '普通用户' }}</p>
+              <p class="join-date">加入时间：{{ formatDate(userInfo.createTime || '2023-01-01') }}</p>
+            </div>
+            <div style="min-width: 200px;">
+              <p>邮箱：{{ userInfo.email || '未设置' }}</p>
+              <p>手机号：{{ userInfo.phone || '未设置' }}</p>
+            </div>
+          </div>
+          <p>简介：{{ userInfo.bio || '未设置' }}</p>
         </div>
       </div>
     </div>
@@ -16,68 +23,7 @@
     <div class="account-content">
       <el-tabs v-model="activeTab" class="account-tabs">
         <el-tab-pane label="个人信息" name="profile">
-          <div class="profile-content">
-            <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="100px" class="profile-form">
-              <el-form-item label="用户名" prop="username">
-                <el-input v-model="profileForm.username" placeholder="请输入用户名" />
-              </el-form-item>
-              <el-form-item label="邮箱" prop="email">
-                <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
-              </el-form-item>
-              <el-form-item label="手机号" prop="phone">
-                <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
-              </el-form-item>
-              <el-form-item label="头像">
-                <div class="avatar-upload-container">
-                  <!-- 图片预览 -->
-                  <div class="avatar-preview-wrapper">
-                    <img v-if="profileForm.avatar" :src="profileForm.avatar" class="avatar-preview" />
-                    <el-icon v-else class="avatar-placeholder"><User /></el-icon>
-                  </div>
-                  
-                  <!-- 上传按钮 -->
-                  <el-upload
-                    ref="avatarUploadRef"
-                    class="avatar-uploader"
-                    :action="'http://localhost:3000/api/upload'"
-                    :show-file-list="false"
-                    :on-success="handleAvatarSuccess"
-                    :on-error="handleAvatarError"
-                    :on-start="handleUploadStart"
-                    :before-upload="beforeAvatarUpload"
-                    :on-progress="handleUploadProgress"
-                    :file-list="fileList"
-                    name="avatar"
-                  >
-                    <el-button type="primary" size="small" :loading="uploading">
-                      {{ uploading ? '上传中...' : '选择头像' }}
-                    </el-button>
-                  </el-upload>
-                  
-                  <!-- 上传进度 -->
-                  <el-progress v-if="uploading" :percentage="uploadProgress" :stroke-width="2" style="margin-top: 10px; width: 200px;" />
-                  
-                  <!-- 上传提示 -->
-                  <div class="upload-tips">
-                    支持 JPG、PNG、WebP 格式，文件大小不超过 2MB
-                  </div>
-                </div>
-              </el-form-item>
-              <el-form-item label="简介">
-                <el-input
-                  v-model="profileForm.bio"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="介绍一下自己吧"
-                  maxlength="200"
-                  show-word-limit
-                />
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="updateProfile">更新信息</el-button>
-              </el-form-item>
-            </el-form>
-          </div>
+          <PersonalInfo v-model:user-info="userInfo" />
         </el-tab-pane>
 
         <el-tab-pane label="我的文章" name="articles">
@@ -85,43 +31,11 @@
         </el-tab-pane>
 
         <el-tab-pane label="我的评论" name="comments">
-          <div class="comments-content">
-            <el-table :data="userComments" style="width: 100%" class="comments-table">
-              <el-table-column prop="content" label="评论内容" show-overflow-tooltip />
-              <el-table-column prop="article_title" label="所属文章" show-overflow-tooltip />
-              <el-table-column prop="created_at" label="评论时间" width="180">
-                <template #default="{ row }">
-                  {{ formatDate(row.created_at) }}
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="150">
-                <template #default="{ row }">
-                  <el-button size="small" @click="viewArticle(row.article_id)">查看文章</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
+          <MyComments :user-id="userInfo.id" />
         </el-tab-pane>
 
         <el-tab-pane label="账户设置" name="settings">
-          <div class="settings-content">
-            <el-form ref="settingsFormRef" :model="settingsForm" :rules="settingsRules" label-width="120px" class="settings-form">
-              <el-form-item label="新密码" prop="newPassword">
-                <el-input v-model="settingsForm.newPassword" type="password" placeholder="留空则不修改密码" />
-              </el-form-item>
-              <el-form-item label="确认密码" prop="confirmPassword">
-                <el-input v-model="settingsForm.confirmPassword" type="password" placeholder="请再次输入新密码" />
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" @click="updatePassword">更新密码</el-button>
-                <el-button @click="resetPasswordForm">重置</el-button>
-              </el-form-item>
-            </el-form>
-            <div class="danger-zone">
-              <h3>危险操作</h3>
-              <el-button type="danger" @click="handleAccountDeletion">删除账户</el-button>
-            </div>
-          </div>
+          <AccountSettings :user-id="userInfo.id" />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -131,10 +45,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, User } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { User } from '@element-plus/icons-vue'
 import request from '../axios/request'
-import MyArticles from './MyArticles.vue'
+import MyArticles from './user/MyArticles.vue'
+import PersonalInfo from './user/PersonalInfo.vue'
+import MyComments from './user/MyComments.vue'
+import AccountSettings from './user/AccountSettings.vue'
 
 const router = useRouter()
 
@@ -149,60 +66,16 @@ const userInfo = reactive({
   role: '',
   createTime: '',
   email: '',
-  phone: ''
+  phone: '',
+  bio: ''
 })
 
-// 个人信息表单
-const profileForm = reactive({
-  id: '',
-  username: '',
-  avatar: '',
-  bio: '',
-  email: '',
-  phone: ''
-})
-
-// 个人信息验证规则
-const profileRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 20, message: '用户名长度在 2 到 20 个字符', trigger: 'blur' }
-  ],
-  email: [
-    { required: false, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
-  ],
-  phone: [
-    { required: false, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
-  ]
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString()
 }
-
-// 设置表单
-const settingsForm = reactive({
-  newPassword: '',
-  confirmPassword: ''
-})
-
-// 设置验证规则
-const settingsRules = {
-  newPassword: [
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { validator: validateConfirmPassword, trigger: 'blur' }
-  ]
-}
-
-// 表单引用
-const profileFormRef = ref(null)
-const settingsFormRef = ref(null)
-
-
-
-// 评论数据
-const userComments = ref([])
-const totalComments = ref(0)
 
 // 获取当前用户信息
 const fetchUserInfo = async () => {
@@ -211,14 +84,24 @@ const fetchUserInfo = async () => {
     if (userInfoStr) {
       const parsedUserInfo = JSON.parse(userInfoStr)
       Object.assign(userInfo, parsedUserInfo)
-      Object.assign(profileForm, {
-        id: parsedUserInfo.id,
-        username: parsedUserInfo.username,
-        avatar: parsedUserInfo.avatar,
-        bio: parsedUserInfo.bio || '',
-        email: parsedUserInfo.email || '',
-        phone: parsedUserInfo.phone || ''
-      })
+      
+      // 调用API获取最新的用户信息，确保数据同步
+      try {
+        const response = await request({
+          url: `/users/${userInfo.id}`,
+          method: 'get'
+        })
+        
+        if (response.data.code === 200 && response.data.data) {
+          // 更新userInfo对象
+          Object.assign(userInfo, response.data.data)
+          // 更新localStorage，确保数据持久化
+          localStorage.setItem('userInfo', JSON.stringify(userInfo))
+        }
+      } catch (apiError) {
+        console.error('从API获取最新用户信息失败:', apiError)
+        // API调用失败时，继续使用localStorage中的数据
+      }
     } else {
       ElMessage.error('未找到用户信息')
       router.push('/login')
@@ -229,326 +112,9 @@ const fetchUserInfo = async () => {
   }
 }
 
-
-
-// 获取用户评论
-const fetchUserComments = async () => {
-  try {
-    if (!userInfo.id) return
-    
-    const response = await request({
-      url: '/comments/user',
-      method: 'get',
-      params: {
-        user_id: userInfo.id
-      }
-    })
-    
-    if (response.data.code === 200) {
-      userComments.value = response.data.data.list || []
-      totalComments.value = response.data.data.total || 0
-    } else {
-      ElMessage.error('获取评论列表失败')
-      userComments.value = []
-      totalComments.value = 0
-    }
-  } catch (error) {
-    console.error('获取评论列表失败:', error)
-    // 静默处理，不影响主功能
-    userComments.value = []
-    totalComments.value = 0
-  }
-}
-
-// 更新用户信息
-const updateProfile = async () => {
-  if (!profileFormRef.value) return
-  
-  try {
-    await profileFormRef.value.validate()
-    
-    const response = await request({
-      url: `/users/${userInfo.id}`,
-      method: 'put',
-      data: {
-        username: profileForm.username,
-        avatar: profileForm.avatar,
-        bio: profileForm.bio,
-        email: profileForm.email,
-        phone: profileForm.phone
-      }
-    })
-    
-    if (response.data.code === 200) {
-      ElMessage.success('个人信息更新成功')
-      
-      // 更新本地存储
-      const updatedUserInfo = {
-        ...userInfo,
-        username: profileForm.username,
-        avatar: profileForm.avatar,
-        bio: profileForm.bio,
-        email: profileForm.email,
-        phone: profileForm.phone
-      }
-      localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo))
-      
-      // 更新全局状态
-      Object.assign(userInfo, updatedUserInfo)
-    } else {
-      ElMessage.error(response.data.message || '更新失败')
-    }
-  } catch (error) {
-    console.error('更新个人信息失败:', error)
-    ElMessage.error('更新失败，请稍后重试')
-  }
-}
-
-// 更新密码
-const updatePassword = async () => {
-  if (!settingsFormRef.value) return
-  
-  try {
-    await settingsFormRef.value.validate()
-    
-    if (!settingsForm.newPassword) {
-      ElMessage.warning('请输入新密码')
-      return
-    }
-    
-    const response = await request({
-      url: `/users/${userInfo.id}/password`,
-      method: 'put',
-      data: {
-        oldPassword: '', // 实际应用中需要用户提供旧密码
-        newPassword: settingsForm.newPassword
-      }
-    })
-    
-    if (response.data.code === 200) {
-      ElMessage.success('密码更新成功')
-      resetPasswordForm()
-    } else {
-      ElMessage.error(response.data.message || '更新密码失败')
-    }
-  } catch (error) {
-    console.error('更新密码失败:', error)
-    ElMessage.error('更新密码失败，请稍后重试')
-  }
-}
-
-// 重置密码表单
-const resetPasswordForm = () => {
-  settingsForm.newPassword = ''
-  settingsForm.confirmPassword = ''
-  if (settingsFormRef.value) {
-    settingsFormRef.value.clearValidate()
-  }
-}
-
-// 验证确认密码
-function validateConfirmPassword(rule, value, callback) {
-  if (value !== settingsForm.newPassword) {
-    callback(new Error('两次输入的密码不一致'))
-  } else {
-    callback()
-  }
-}
-
-// 头像上传相关变量
-const avatarUploadRef = ref(null)
-const fileList = ref([])
-const uploading = ref(false)
-const uploadProgress = ref(0)
-
-// 客户端图片压缩
-const compressImage = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = (event) => {
-      const img = new Image()
-      img.src = event.target.result
-      img.onload = () => {
-        // 创建画布
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        
-        // 设置压缩后的尺寸，保持宽高比
-        const MAX_WIDTH = 800
-        const MAX_HEIGHT = 800
-        let { width, height } = img
-        
-        if (width > height && width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width
-          width = MAX_WIDTH
-        } else if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height
-          height = MAX_HEIGHT
-        }
-        
-        canvas.width = width
-        canvas.height = height
-        
-        // 绘制压缩后的图片
-        ctx.drawImage(img, 0, 0, width, height)
-        
-        // 将画布转换为 Blob 对象
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              // 创建新的文件对象
-              const compressedFile = new File([blob], file.name, {
-                type: file.type,
-                lastModified: Date.now()
-              })
-              resolve(compressedFile)
-            } else {
-              reject(new Error('图片压缩失败'))
-            }
-          },
-          file.type,
-          0.8 // 压缩质量，0.8 表示 80%
-        )
-      }
-      img.onerror = () => {
-        reject(new Error('图片加载失败'))
-      }
-    }
-    reader.onerror = () => {
-      reject(new Error('文件读取失败'))
-    }
-  })
-}
-
-// 上传前验证
-const beforeAvatarUpload = async (file) => {
-  // 验证文件类型
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
-    ElMessage.error('头像图片只能是 JPG、PNG 或 WebP 格式!')
-    return false
-  }
-  
-  // 验证文件大小
-  const maxSize = 2 * 1024 * 1024 // 2MB
-  if (file.size > maxSize) {
-    ElMessage.error('图片大小不能超过 2MB!')
-    return false
-  }
-  
-  try {
-    // 客户端压缩图片
-    const compressedFile = await compressImage(file)
-    
-    // 替换原始文件为压缩后的文件
-    return compressedFile
-  } catch (error) {
-    console.error('图片压缩失败:', error)
-    ElMessage.error('图片压缩失败，请稍后重试')
-    return false
-  }
-}
-
-// 上传开始处理
-const handleUploadStart = (file) => {
-  uploading.value = true
-  uploadProgress.value = 0
-}
-
-// 上传进度处理
-const handleUploadProgress = (event, file, fileList) => {
-  if (event && event.total > 0) {
-    uploadProgress.value = Math.round((event.loaded / event.total) * 100)
-  }
-}
-
-// 上传成功处理
-const handleAvatarSuccess = (response, file, fileList) => {
-  uploading.value = false
-  uploadProgress.value = 0
-  
-  try {
-    if (response && response.data && response.data.url) {
-      profileForm.avatar = response.data.url
-      ElMessage.success('头像上传成功')
-    } else {
-      // 模拟上传成功，使用本地文件URL
-      profileForm.avatar = URL.createObjectURL(file.raw)
-      ElMessage.success('头像上传成功（模拟）')
-    }
-  } catch (error) {
-    console.error('处理上传成功响应失败:', error)
-    // 使用本地文件URL作为最后的备份
-    profileForm.avatar = URL.createObjectURL(file.raw)
-    ElMessage.success('头像上传成功（模拟）')
-  }
-}
-
-// 上传失败处理
-const handleAvatarError = (error, file, fileList) => {
-  uploading.value = false
-  uploadProgress.value = 0
-  
-  console.error('头像上传失败:', error)
-  ElMessage.error('头像上传失败，请稍后重试')
-}
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString()
-}
-
-// 查看文章
-const viewArticle = (articleId) => {
-  router.push(`/topic/${articleId}`)
-}
-
-// 处理账户删除
-const handleAccountDeletion = async () => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要删除您的账户吗？此操作不可撤销，所有数据将被永久删除。',
-      '警告',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    const response = await request({
-      url: `/users/${userInfo.id}`,
-      method: 'delete'
-    })
-    
-    if (response.data.code === 200) {
-      ElMessage.success('账户已删除')
-      
-      // 清除本地存储
-      localStorage.removeItem('isLoggedIn')
-      localStorage.removeItem('userInfo')
-      document.cookie = 'isLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      
-      // 跳转到首页
-      router.push('/')
-    } else {
-      ElMessage.error(response.data.message || '删除失败')
-    }
-  } catch (error) {
-    console.error('删除账户失败:', error)
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败，请稍后重试')
-    }
-  }
-}
-
-// 组件挂载时获取用户信息和数据
+// 组件挂载时获取用户信息
 onMounted(() => {
   fetchUserInfo()
-  fetchUserComments()
 })
 </script>
 
@@ -715,7 +281,8 @@ onMounted(() => {
   text-align: left;
 }
 
-.articles-table, .comments-table {
+.articles-table,
+.comments-table {
   margin-bottom: var(--spacing-xl);
   height: 46vh;
   --el-table-tr-bg-color: var(--bg-primary);
