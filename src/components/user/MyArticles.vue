@@ -81,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, defineProps } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../../axios/request'

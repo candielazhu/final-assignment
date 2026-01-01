@@ -256,10 +256,161 @@ async function updatePassword(req, res) {
   }
 }
 
+// 获取用户列表
+async function getUsers(req, res) {
+  try {
+    const { page = 1, pageSize = 10, search = '' } = req.query;
+    const pageNum = parseInt(page);
+    const size = parseInt(pageSize);
+    const offset = (pageNum - 1) * size;
+    
+    // 使用不同的SQL语句构建方式，避免参数问题
+    let usersSql = 'SELECT id, username, email, phone, avatar, bio, role, created_at FROM users';
+    let countSql = 'SELECT COUNT(*) as count FROM users';
+    let usersParams = [];
+    let countParams = [];
+    
+    if (search) {
+      const searchTerm = `%${search}%`;
+      usersSql += ' WHERE username LIKE ? OR email LIKE ?';
+      countSql += ' WHERE username LIKE ? OR email LIKE ?';
+      usersParams = [searchTerm, searchTerm];
+      countParams = [searchTerm, searchTerm];
+    }
+    
+    // 直接拼接数值，避免参数问题
+    usersSql += ` ORDER BY created_at DESC LIMIT ${size} OFFSET ${offset}`;
+    
+    const users = await executeQuery(usersSql, usersParams);
+    const [countResult] = await executeQuery(countSql, countParams);
+    
+    res.json({
+      code: 200,
+      message: '获取成功',
+      data: {
+        users,
+        total: countResult.count
+      }
+    });
+  } catch (error) {
+    console.error('获取用户列表失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '获取用户列表失败，请稍后重试',
+      error: error.message
+    });
+  }
+}
+
+// 创建用户
+async function createUser(req, res) {
+  try {
+    const { username, email, password, phone, role = 'user', bio = '' } = req.body;
+    
+    // 验证输入
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        code: 400,
+        message: '缺少必填字段',
+        errors: {
+          username: !username ? '用户名不能为空' : undefined,
+          email: !email ? '邮箱不能为空' : undefined,
+          password: !password ? '密码不能为空' : undefined
+        }
+      });
+    }
+    
+    // 检查用户名是否已存在
+    const checkUsernameSql = 'SELECT id FROM users WHERE username = ?';
+    const usernameResult = await executeQuery(checkUsernameSql, [username]);
+    
+    if (usernameResult.length > 0) {
+      return res.status(400).json({
+        code: 400,
+        message: '用户名已存在',
+        errors: {
+          username: '用户名已被使用'
+        }
+      });
+    }
+    
+    // 检查邮箱是否已存在
+    const checkEmailSql = 'SELECT id FROM users WHERE email = ?';
+    const emailResult = await executeQuery(checkEmailSql, [email]);
+    
+    if (emailResult.length > 0) {
+      return res.status(400).json({
+        code: 400,
+        message: '邮箱已存在',
+        errors: {
+          email: '邮箱已被使用'
+        }
+      });
+    }
+    
+    // 插入新用户
+    const insertSql = `
+      INSERT INTO users (username, PASSWORD, email, phone, role, bio) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    
+    await executeQuery(insertSql, [username, password, email, phone, role, bio]);
+    
+    res.status(201).json({
+      code: 200,
+      message: '创建成功'
+    });
+  } catch (error) {
+    console.error('创建用户失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '创建用户失败，请稍后重试',
+      error: error.message
+    });
+  }
+}
+
+// 删除用户
+async function deleteUser(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // 检查用户是否存在
+    const checkSql = 'SELECT id FROM users WHERE id = ?';
+    const checkResult = await executeQuery(checkSql, [id]);
+    
+    if (checkResult.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '用户不存在'
+      });
+    }
+    
+    // 删除用户
+    const deleteSql = 'DELETE FROM users WHERE id = ?';
+    await executeQuery(deleteSql, [id]);
+    
+    res.json({
+      code: 200,
+      message: '删除成功'
+    });
+  } catch (error) {
+    console.error('删除用户失败:', error);
+    res.status(500).json({
+      code: 500,
+      message: '删除用户失败，请稍后重试',
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   registerUser,
   loginUser,
   getUserInfo,
   updateUser,
-  updatePassword
+  updatePassword,
+  getUsers,
+  createUser,
+  deleteUser
 };

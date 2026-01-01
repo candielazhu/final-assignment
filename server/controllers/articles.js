@@ -25,6 +25,7 @@ async function getArticles(req, res) {
     
     // 获取筛选参数
     const statusFilter = req.query.status;
+    const searchQuery = req.query.search;
 
     // 获取是否仅返回当前用户文章的参数（用于Account.vue页面）
     const onlyCurrentUser = req.query.only_current_user === 'true';
@@ -32,17 +33,27 @@ async function getArticles(req, res) {
     // 构建基础WHERE条件
     let whereConditions = [];
     
+    // 检查是否为管理员页面请求
+    const isAdminPage = req.query.is_admin === 'true';
+    
     if (onlyCurrentUser) {
       // Account.vue页面：只返回当前用户的文章
       whereConditions.push(`a.user_id = ${currentUserId}`);
-    } else {
+    } else if (!isAdminPage) {
       // Main.vue页面：只返回已发布的文章
       whereConditions.push(`a.status = 'published'`);
     }
+    // 管理员页面：不添加状态限制，返回所有文章
     
-    // 添加状态筛选（仅对Account.vue页面有效，Main.vue页面始终只显示已发布文章）
-    if (onlyCurrentUser && statusFilter && statusFilter !== 'all') {
+    // 添加状态筛选（对所有页面有效）
+    if (statusFilter && statusFilter !== 'all') {
       whereConditions.push(`a.status = '${statusFilter}'`);
+    }
+    
+    // 添加搜索功能
+    if (searchQuery && searchQuery.trim() !== '') {
+      const searchTerm = `%${searchQuery}%`;
+      whereConditions.push(`(a.title LIKE '${searchTerm}' OR a.summary LIKE '${searchTerm}' OR a.content LIKE '${searchTerm}')`);
     }
     
     // 构建完整的WHERE子句
